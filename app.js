@@ -413,7 +413,7 @@ function renderGlobalChat() {
     };
 }
 
-// 🔒 CHAT PRIVADO ESTRICTO Y PERSISTENTE
+// 🔒 CHAT PRIVADO ESTRICTO POR CORREO ELECTRÓNICO
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
     if (!secPrivate) return;
@@ -423,10 +423,11 @@ function renderPrivateChat() {
             <div class="border-r border-slate-200 dark:border-slate-700 p-4 space-y-4 bg-slate-50 dark:bg-slate-900/50 flex flex-col">
                 <div>
                     <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Enviar Solicitud de Amistad</h4>
-                    <div class="flex space-x-2">
-                        <input type="text" id="private-target-user" placeholder="Nombre de usuario" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white outline-none">
-                        <button onclick="sendFriendRequest()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">
-                            <i class="fa-solid fa-user-plus"></i>
+                    <div class="space-y-2">
+                        <input type="email" id="private-target-email" placeholder="Correo del usuario (Ej: amigo@gmail.com)" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white outline-none">
+                        <input type="text" id="private-target-name" placeholder="Nombre visible de tu amigo" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white outline-none">
+                        <button onclick="sendFriendRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-user-plus"></i><span>Añadir Amigo</span>
                         </button>
                     </div>
                 </div>
@@ -442,7 +443,7 @@ function renderPrivateChat() {
                         <i class="fa-solid fa-user-lock text-indigo-500"></i>
                         <h3 class="font-bold text-sm text-slate-800 dark:text-white" id="private-chat-header">Selecciona un chat</h3>
                     </div>
-                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Privado 1vs1</span>
+                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Protegido por Email</span>
                 </div>
 
                 <div id="private-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3">
@@ -468,26 +469,34 @@ function renderPrivateChat() {
 let activePrivateChatId = null;
 let privateUnsubscribe = null;
 
-// ENVIAR SOLICITUD DE AMISTAD EN TIEMPO REAL
+// ENVIAR SOLICITUD DE AMISTAD CON CORREO ÚNICO
 window.sendFriendRequest = function() {
-    const targetInput = document.getElementById('private-target-user');
-    const target = targetInput ? targetInput.value.trim() : '';
-    if (!target) { showToast('Escribe el nombre del usuario.', 'info'); return; }
+    const targetEmailInput = document.getElementById('private-target-email');
+    const targetNameInput = document.getElementById('private-target-name');
+    const targetEmail = targetEmailInput ? targetEmailInput.value.trim().toLowerCase() : '';
+    const targetName = targetNameInput ? targetNameInput.value.trim() : 'Amigo';
 
+    if (!targetEmail) { showToast('Escribe el correo del usuario.', 'info'); return; }
+
+    const myEmail = currentUser ? currentUser.email.toLowerCase() : '';
     const myName = currentUser ? currentUser.name : 'Meyer';
-    if (target.toLowerCase() === myName.toLowerCase()) {
+
+    if (targetEmail === myEmail) {
         showToast('No puedes enviarte solicitud a ti mismo.', 'info');
         return;
     }
 
     if (db) {
-        db.collection('friendRequests').doc(target.toLowerCase().replace(/\s+/g, '')).set({
-            fromUser: myName,
+        const docId = targetEmail.replace(/[^a-zA-Z0-9]/g, '_');
+        db.collection('friendRequests').doc(docId).set({
+            fromEmail: myEmail,
+            fromName: myName,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            showToast(`📩 Solicitud de amistad enviada a ${target}`);
-            addContactToSavedList(target);
-            targetInput.value = '';
+            showToast(`📩 Solicitud enviada a ${targetName}`);
+            addContactToSavedList(targetEmail, targetName);
+            targetEmailInput.value = '';
+            targetNameInput.value = '';
         });
     }
 };
@@ -495,18 +504,18 @@ window.sendFriendRequest = function() {
 // NOTIFICACIÓN RECIBIDA EN CHAT PRIVADO
 function listenForFriendRequests() {
     if (!db || !currentUser) return;
-    const myDocId = currentUser.name.toLowerCase().replace(/\s+/g, '');
+    const myDocId = currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
 
     db.collection('friendRequests').doc(myDocId).onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
-            showToast(`🔔 ${data.fromUser} quiere ser tu amigo en Chat Privado.`, 'info');
-            addContactToSavedList(data.fromUser);
+            showToast(`🔔 ${data.fromName} (${data.fromEmail}) te añadió en Chat Privado.`, 'info');
+            addContactToSavedList(data.fromEmail, data.fromName);
         }
     });
 }
 
-// PERSISTENCIA: MOSTRAR LISTA DE CONTACTOS GUARDADOS
+// PERSISTENCIA: MOSTRAR LISTA DE CONTACTOS GUARDADOS CON EMAIL
 function renderSavedPrivateContactsList() {
     const listContainer = document.getElementById('private-chats-list');
     if (!listContainer) return;
@@ -515,36 +524,42 @@ function renderSavedPrivateContactsList() {
     if (!currentUser.privateContacts) currentUser.privateContacts = [];
 
     if (currentUser.privateContacts.length === 0) {
-        listContainer.innerHTML = `<p class="text-[11px] text-slate-400 p-2">Escribe el nombre arriba para añadir un amigo.</p>`;
+        listContainer.innerHTML = `<p class="text-[11px] text-slate-400 p-2">Escribe el correo arriba para añadir un amigo de forma segura.</p>`;
         return;
     }
 
-    const myName = currentUser ? currentUser.name : 'Meyer';
+    const myEmail = currentUser ? currentUser.email.toLowerCase() : '';
 
-    currentUser.privateContacts.forEach(target => {
-        const chatId = [myName, target].sort().join('_').toLowerCase().replace(/\s+/g, '');
+    currentUser.privateContacts.forEach(contact => {
+        const contactEmail = typeof contact === 'string' ? contact.toLowerCase() : contact.email.toLowerCase();
+        const contactName = typeof contact === 'string' ? contact : (contact.name || contact.email);
+
+        // Clave única del chat usando ambos correos ordenados alfabéticamente
+        const chatId = [myEmail, contactEmail].sort().join('_').replace(/[^a-zA-Z0-9]/g, '_');
+
         const item = document.createElement('div');
         item.id = `chat-item-${chatId}`;
         item.className = "p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-xl cursor-pointer text-xs font-bold text-slate-700 dark:text-white flex items-center justify-between transition mb-1";
-        item.innerHTML = `<span><i class="fa-solid fa-user mr-2 text-indigo-500"></i>${target}</span><i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>`;
-        item.onclick = () => openPrivateChat(chatId, target);
+        item.innerHTML = `<span><i class="fa-solid fa-user-shield mr-2 text-indigo-500"></i>${contactName}</span><i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>`;
+        item.onclick = () => openPrivateChat(chatId, contactName);
         listContainer.appendChild(item);
     });
 }
 
-function addContactToSavedList(target) {
+function addContactToSavedList(email, name) {
     if (!currentUser.privateContacts) currentUser.privateContacts = [];
-    if (!currentUser.privateContacts.includes(target)) {
-        currentUser.privateContacts.push(target);
+    const exists = currentUser.privateContacts.some(c => (typeof c === 'string' ? c === email : c.email === email));
+    
+    if (!exists) {
+        currentUser.privateContacts.push({ email, name });
         saveCurrentUserData();
     }
     renderSavedPrivateContactsList();
 }
 
-// ABRIR CHAT PRIVADO ÚNICAMENTE PARA LOS DOS USUARIOS
+// ABRIR CHAT PRIVADO CON FILTRADO ESTRICTO POR EMAIL
 function openPrivateChat(chatId, targetName) {
     activePrivateChatId = chatId;
-    addContactToSavedList(targetName);
 
     document.getElementById('private-chat-header').innerText = `Chat Privado con ${targetName}`;
     document.getElementById('private-input-text').disabled = false;
@@ -553,16 +568,16 @@ function openPrivateChat(chatId, targetName) {
     if (privateUnsubscribe) privateUnsubscribe();
 
     if (db) {
-        // FILTRADO ESTRICTO POR EL ID ÚNICO DEL CHAT
+        // Consulta segura al ID del chat generado con los correos electrónicos
         privateUnsubscribe = db.collection('privateChats').doc(chatId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
                 let html = '';
-                const myName = currentUser ? currentUser.name : 'Meyer';
+                const myEmail = currentUser ? currentUser.email.toLowerCase() : '';
 
                 snapshot.forEach(doc => {
                     const msg = doc.data();
-                    const isMe = msg.sender === myName;
+                    const isMe = msg.senderEmail === myEmail;
 
                     html += `
                         <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
@@ -575,7 +590,7 @@ function openPrivateChat(chatId, targetName) {
                 });
 
                 const container = document.getElementById('private-messages-container');
-                container.innerHTML = html || '<p class="text-xs text-center text-slate-400 mt-4">Di hola 👋</p>';
+                container.innerHTML = html || '<p class="text-xs text-center text-slate-400 mt-4">Di hola 👋 (Chat 100% Privado)</p>';
                 container.scrollTop = container.scrollHeight;
             });
     }
@@ -587,11 +602,12 @@ function openPrivateChat(chatId, targetName) {
         if (!text || !activePrivateChatId) return;
 
         const myName = currentUser ? currentUser.name : 'Meyer';
+        const myEmail = currentUser ? currentUser.email.toLowerCase() : '';
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         if (db) {
             db.collection('privateChats').doc(activePrivateChatId).collection('messages').add({
-                sender: myName, chatId: activePrivateChatId, text, time: timeStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                senderName: myName, senderEmail: myEmail, text, time: timeStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => { input.value = ''; });
         }
     };
@@ -797,14 +813,13 @@ function renderLiveStream() {
                 </div>
             </div>
 
-            <!-- CONTENEDOR PRINCIPAL TIPO DÚO TIKTOK (DIVIDIDO EN CELULAR Y PC) -->
+            <!-- CONTENEDOR PRINCIPAL TIPO DÚO TIKTOK -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2 relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col min-h-[420px] sm:min-h-[480px]">
                     <span id="live-status-badge" class="absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-20">
                         SIN TRANSMISIÓN SELECCIONADA
                     </span>
                     
-                    <!-- PANTALLA TIPO DÚO TIKTOK (2 VIDEOS PARALELOS O VERTICALES) -->
                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 bg-slate-950 min-h-[340px]">
                         <div class="relative w-full h-full min-h-[170px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800/60">
                             <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover"></video>
@@ -814,7 +829,7 @@ function renderLiveStream() {
                         </div>
                     </div>
 
-                    <!-- BARRA DE CONTROLES FLOTANTE/VISIBILIDAD GARANTIZADA EN CELULAR Y PC -->
+                    <!-- BARRA DE CONTROLES FLOTANTE -->
                     <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 grid grid-cols-2 sm:flex sm:justify-center gap-1.5 z-20">
                         <button onclick="toggleCameraFacing()" class="w-full sm:w-auto px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1">
                             <i class="fa-solid fa-camera-rotate"></i><span>Voltear</span>
@@ -1416,7 +1431,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showMainApp();
             showToast('🎉 Cuenta creada exitosamente.');
         } else {
-            // MODO INICIAR SESIÓN: SOLO PERMITE SI EXISTE PREVIAMENTE
             if (!data[email]) {
                 showToast('❌ Esta cuenta no existe. Haz clic en "Crear Cuenta" para registrarte.', 'info');
                 return;
