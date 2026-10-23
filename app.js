@@ -81,7 +81,7 @@ let localMediaStream = null;
 let warUnsubscribe = null;
 let currentRoomCode = '';
 let myRole = '';
-let currentFacingMode = 'user'; // 'user' para frontal, 'environment' para trasera
+let currentFacingMode = 'user'; // 'user' frontal, 'environment' trasera
 
 // UTILS & TOASTS
 function showToast(message, type = 'success') {
@@ -761,27 +761,27 @@ window.submitWarAnswerOnline = function() {
 };
 
 // ==========================================
-// 📹 TRANSMISIONES EN VIVO (PANTALLA DÚO CELULAR/PC Y BOTÓN VOLTEAR CÁMARA)
+// 📹 TRANSMISIONES EN VIVO (DISEÑO DÚO TIKTOK + BOTONES VISIBLES EN CELULAR)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
     if (!secLive) return;
 
     secLive.innerHTML = `
-        <div class="bg-slate-950 rounded-3xl p-4 sm:p-6 text-white border border-slate-800 shadow-2xl space-y-4 max-w-4xl mx-auto">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="bg-slate-950 rounded-3xl p-3 sm:p-6 text-white border border-slate-800 shadow-2xl space-y-4 max-w-4xl mx-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
                 <div class="flex items-center space-x-2">
                     <span class="w-3 h-3 bg-rose-500 rounded-full animate-ping"></span>
                     <h3 class="text-lg font-black">Transmisiones en Vivo 🔴</h3>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <button id="btn-random-duo" onclick="startRandomDuoMatch()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 font-bold text-xs rounded-xl transition shadow-md flex items-center space-x-1">
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button id="btn-random-duo" onclick="startRandomDuoMatch()" class="flex-1 sm:flex-none px-3 py-2 bg-amber-600 hover:bg-amber-500 font-bold text-xs rounded-xl transition shadow-md flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-shuffle"></i><span>Emparejar al Azar 🌐</span>
                     </button>
-                    <button id="btn-invite-duo" onclick="inviteFriendToDuo()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs rounded-xl transition hidden shadow-md flex items-center space-x-1">
+                    <button id="btn-invite-duo" onclick="inviteFriendToDuo()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs rounded-xl transition hidden shadow-md flex items-center justify-center space-x-1">
                         <i class="fa-solid fa-user-plus"></i><span>Invitar a Dúo</span>
                     </button>
-                    <button id="btn-toggle-live" onclick="toggleHostingLive()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg">
+                    <button id="btn-toggle-live" onclick="toggleHostingLive()" class="flex-1 sm:flex-none px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg text-center">
                         Transmitir Mi Cámara 📹
                     </button>
                 </div>
@@ -795,37 +795,41 @@ function renderLiveStream() {
                 </div>
             </div>
 
-            <!-- CONTENEDOR PRINCIPAL: VIDEO DÚO 50/50 + CHAT -->
-            <div class="grid md:grid-cols-3 gap-4 h-[400px]">
-                <div class="md:col-span-2 relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col">
-                    <span id="live-status-badge" class="absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-10">
+            <!-- CONTENEDOR PRINCIPAL TIPO DÚO TIKTOK (DIVIDIDO EN CELULAR Y PC) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col min-h-[420px] sm:min-h-[480px]">
+                    <span id="live-status-badge" class="absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-20">
                         SIN TRANSMISIÓN SELECCIONADA
                     </span>
                     
-                    <!-- PANTALLA DIVIDIDA ADAPTADA PARA PC Y CELULAR -->
-                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 h-[320px] bg-slate-950">
-                        <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-900 border border-slate-800"></video>
-                        <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-900 border border-slate-800"></video>
+                    <!-- PANTALLA TIPO DÚO TIKTOK (2 VIDEOS PARALELOS O VERTICALES) -->
+                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 bg-slate-950 min-h-[340px]">
+                        <div class="relative w-full h-full min-h-[170px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800/60">
+                            <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover"></video>
+                        </div>
+                        <div class="relative w-full h-full min-h-[170px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800/60">
+                            <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover"></video>
+                        </div>
                     </div>
 
-                    <!-- BARRA DE CONTROLES VISIBLE (CON BOTÓN VOLTEAR CÁMARA) -->
-                    <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center flex-wrap gap-1">
-                        <button onclick="toggleCameraFacing()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
-                            <i class="fa-solid fa-camera-rotate"></i><span>Voltear Cámara</span>
+                    <!-- BARRA DE CONTROLES FLOTANTE/VISIBILIDAD GARANTIZADA EN CELULAR Y PC -->
+                    <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 grid grid-cols-2 sm:flex sm:justify-center gap-1.5 z-20">
+                        <button onclick="toggleCameraFacing()" class="w-full sm:w-auto px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-camera-rotate"></i><span>Voltear</span>
                         </button>
-                        <button onclick="toggleDuoMute()" id="btn-duo-mute" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
+                        <button onclick="toggleDuoMute()" id="btn-duo-mute" class="w-full sm:w-auto px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
                         </button>
-                        <button onclick="toggleDuoPauseCam()" id="btn-duo-pause" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
+                        <button onclick="toggleDuoPauseCam()" id="btn-duo-pause" class="w-full sm:w-auto px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1">
                             <i class="fa-solid fa-video"></i><span>Pausar</span>
                         </button>
-                        <button onclick="stopDuoLive()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
-                            <i class="fa-solid fa-phone-slash"></i><span>Apagar / Salir</span>
+                        <button onclick="stopDuoLive()" class="w-full sm:w-auto px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-phone-slash"></i><span>Apagar</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-full overflow-hidden">
+                <div class="bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-[300px] md:h-auto overflow-hidden">
                     <div class="p-3 border-b border-slate-800 text-xs font-bold text-slate-400" id="live-chat-header">
                         💬 Chat de la Sala
                     </div>
@@ -848,7 +852,7 @@ function renderLiveStream() {
 let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
 
-// TRANSMITIR TU CÁMARA (CON SOPORTE FACINGMODE)
+// TRANSMITIR TU CÁMARA
 window.toggleHostingLive = async function() {
     const btn = document.getElementById('btn-toggle-live');
     const btnDuo = document.getElementById('btn-invite-duo');
@@ -867,7 +871,7 @@ window.toggleHostingLive = async function() {
             const guestPlayer = document.getElementById('live-guest-player');
             if (guestPlayer) {
                 guestPlayer.srcObject = localMediaStream;
-                guestPlayer.muted = true; // Silenciado localmente para evitar eco
+                guestPlayer.muted = true;
                 guestPlayer.play().catch(e => console.log(e));
             }
 
@@ -885,11 +889,11 @@ window.toggleHostingLive = async function() {
 
                     activeLiveRoomId = myRoomId;
                     btn.innerText = "⏹️ Apagar Live";
-                    btn.className = "px-4 py-2 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-xl transition shadow-lg border border-slate-700";
+                    btn.className = "flex-1 sm:flex-none px-4 py-2 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-xl transition shadow-lg border border-slate-700 text-center";
                     btnDuo.classList.remove('hidden');
 
                     document.getElementById('live-status-badge').innerText = `🔴 EN VIVO (${myName})`;
-                    document.getElementById('live-status-badge').className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full animate-pulse z-10";
+                    document.getElementById('live-status-badge').className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full animate-pulse z-20";
 
                     connectToLiveChat(myRoomId, myName);
                     showToast(`🚀 Tu sala "Live de ${myName}" está activa.`);
@@ -902,7 +906,7 @@ window.toggleHostingLive = async function() {
                         const mainPlayer = document.getElementById('live-video-player');
                         if (mainPlayer) {
                             mainPlayer.srcObject = guestStream;
-                            mainPlayer.muted = false; // Audio habilitado para hablar
+                            mainPlayer.muted = false;
                             mainPlayer.play().catch(e => console.log(e));
                             showToast('👥 ¡Un usuario se unió a tu transmisión!');
                         }
@@ -915,7 +919,7 @@ window.toggleHostingLive = async function() {
     }
 };
 
-// BOTÓN PARA VOLTEAR CÁMARA (FRONTAL / TRASERA)
+// BOTÓN PARA VOLTEAR CÁMARA (FRONTAL / TRASERA EN CELULAR)
 window.toggleCameraFacing = async function() {
     currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
     if (localMediaStream) {
@@ -936,16 +940,16 @@ window.toggleCameraFacing = async function() {
                 const sender = activeCall.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
                 if (sender) sender.replaceTrack(videoTrack);
             }
-            showToast(currentFacingMode === 'user' ? '🔄 Cámara frontal activada' : '🔄 Cámara trasera activada', 'info');
+            showToast(currentFacingMode === 'user' ? '🔄 Cámara frontal' : '🔄 Cámara trasera', 'info');
         } catch (e) {
             showToast('No se pudo voltear la cámara.', 'info');
         }
     } else {
-        showToast('Debes estar transmitiendo en vivo para voltear la cámara.', 'info');
+        showToast('Debes estar transmitiendo para voltear la cámara.', 'info');
     }
 };
 
-// EMPAREJAMIENTO AL AZAR (ESTRICTO: REQUIERE TENER LIVE PRENDIDO)
+// EMPAREJAMIENTO AL AZAR
 window.startRandomDuoMatch = async function() {
     if (!localMediaStream) {
         showToast('⚠️ Debes encender "Transmitir Mi Cámara" primero para poder emparejar.', 'info');
@@ -970,7 +974,7 @@ window.startRandomDuoMatch = async function() {
                     const mainPlayer = document.getElementById('live-video-player');
                     if (mainPlayer) {
                         mainPlayer.srcObject = remoteStream;
-                        mainPlayer.muted = false; // Audio habilitado
+                        mainPlayer.muted = false;
                         mainPlayer.play().catch(e => console.log(e));
                     }
                     showToast(`🎲 ¡Emparejado al azar con ${target.userName}!`);
@@ -1000,11 +1004,11 @@ window.toggleDuoMute = function() {
             const btn = document.getElementById('btn-duo-mute');
             if (audioTrack.enabled) {
                 btn.innerHTML = `<i class="fa-solid fa-microphone"></i><span>Silenciar</span>`;
-                btn.className = "px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1";
+                btn.className = "w-full sm:w-auto px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1";
                 showToast('🎙️ Micrófono activado');
             } else {
                 btn.innerHTML = `<i class="fa-solid fa-microphone-slash text-rose-400"></i><span>Activar Mic</span>`;
-                btn.className = "px-3 py-1.5 bg-rose-600/20 text-rose-300 text-xs font-bold rounded-lg transition flex items-center space-x-1 border border-rose-500/40";
+                btn.className = "w-full sm:w-auto px-3 py-2 bg-rose-600/20 text-rose-300 text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1 border border-rose-500/40";
                 showToast('🔇 Micrófono silenciado');
             }
         }
@@ -1019,11 +1023,11 @@ window.toggleDuoPauseCam = function() {
             const btn = document.getElementById('btn-duo-pause');
             if (videoTrack.enabled) {
                 btn.innerHTML = `<i class="fa-solid fa-video"></i><span>Pausar</span>`;
-                btn.className = "px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1";
+                btn.className = "w-full sm:w-auto px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1";
                 showToast('📹 Cámara reanudada');
             } else {
                 btn.innerHTML = `<i class="fa-solid fa-video-slash text-rose-400"></i><span>Reanudar</span>`;
-                btn.className = "px-3 py-1.5 bg-rose-600/20 text-rose-300 text-xs font-bold rounded-lg transition flex items-center space-x-1 border border-rose-500/40";
+                btn.className = "w-full sm:w-auto px-3 py-2 bg-rose-600/20 text-rose-300 text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1 border border-rose-500/40";
                 showToast('⏸️ Cámara pausada');
             }
         }
@@ -1063,7 +1067,7 @@ window.stopDuoLive = function() {
     const btn = document.getElementById('btn-toggle-live');
     if (btn) {
         btn.innerText = "Transmitir Mi Cámara 📹";
-        btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
+        btn.className = "flex-1 sm:flex-none px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg text-center";
     }
 
     const btnDuo = document.getElementById('btn-invite-duo');
@@ -1072,7 +1076,7 @@ window.stopDuoLive = function() {
     const badge = document.getElementById('live-status-badge');
     if (badge) {
         badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
-        badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-10";
+        badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-20";
     }
 
     showToast('🛑 Transmisión cerrada por completo.', 'info');
@@ -1186,7 +1190,7 @@ async function connectToHostDuo(hostPeerId, hostName) {
                     const mainPlayer = document.getElementById('live-video-player');
                     if (mainPlayer) {
                         mainPlayer.srcObject = hostStream;
-                        mainPlayer.muted = false; // Audio habilitado
+                        mainPlayer.muted = false;
                         mainPlayer.play().catch(e => console.log(e));
                     }
                     const guestPlayer = document.getElementById('live-guest-player');
@@ -1258,12 +1262,12 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
                     const player = document.getElementById('live-video-player');
                     if (player) {
                         player.srcObject = remoteStream;
-                        player.muted = false; // Audio habilitado para escuchar
+                        player.muted = false;
                         player.play().then(() => {
                             const badge = document.getElementById('live-status-badge');
                             if (badge) {
                                 badge.innerText = `🔴 EN VIVO (${hostName})`;
-                                badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full animate-pulse z-10";
+                                badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full animate-pulse z-20";
                             }
                             showToast(`📺 ¡En vivo con ${hostName}!`);
                         }).catch(err => {
