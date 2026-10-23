@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprendiendo con Meyer - Plataforma Educativa e Interactiva</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDKs (v8 CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- PeerJS para Transmisiones en Vivo WebRTC (Gente Real) -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; transition: transform 0.6s; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; }
+        .tab-btn.active {
+            border-bottom: 2px solid #6366f1;
+            color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- NAVBAR HEADER -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg">M</div>
+                <div>
+                    <h1 class="font-extrabold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">Aprendiendo con Meyer</h1>
+                    <p class="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">English Learning Platform</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <span id="header-user-welcome" class="text-xs font-bold text-slate-600 dark:text-slate-300 hidden sm:inline"></span>
+                <button id="theme-toggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-amber-400 hover:opacity-80 transition">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline"></i>
+                </button>
+                <button id="btn-logout" class="hidden text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-xl transition">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+        <!-- AUTH MODAL (LOGIN / REGISTER) -->
+        <div id="auth-modal" class="max-w-md mx-auto my-12 bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h2 id="auth-title" class="text-2xl font-extrabold text-slate-900 dark:text-white">¡Hola! Soy Meyer</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Ingresa tus datos para continuar tu progreso en la nube.</p>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <div id="name-field-container" class="hidden">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre Completo</label>
+                    <input type="text" id="input-name" placeholder="Meyer Cobrobot" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-sm font-semibold outline-none focus:border-indigo-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                    <input type="email" id="input-email" placeholder="tu@correo.com" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-sm font-semibold outline-none focus:border-indigo-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
+                    <input type="password" id="input-password" placeholder="••••••••" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-sm font-semibold outline-none focus:border-indigo-600">
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-indigo-600/30">
+                    Entrar a la App
+                </button>
+            </form>
+
+            <div class="text-center">
+                <button id="btn-toggle-auth" class="text-xs font-bold text-indigo-500 hover:underline">
+                    ¿No tienes cuenta? Regístrate aquí
+                </button>
+            </div>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="hidden space-y-6">
+
+            <!-- STATS BAR -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 id="welcome-title" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">¡Bienvenido!</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Aprende, practica en vivo y compite en tiempo real.</p>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-bolt"></i></div>
+                        <div>
+                            <span id="xp-count" class="block font-black text-lg text-slate-900 dark:text-white">0</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Puntos XP</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-fire"></i></div>
+                        <div>
+                            <span id="streak-count" class="block font-black text-lg text-slate-900 dark:text-white">1</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Días Racha</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB NAVIGATION -->
+            <div class="flex border-b border-slate-200 dark:border-slate-700 overflow-x-auto space-x-6">
+                <button id="tab-lessons" class="tab-btn active py-3 font-bold text-sm whitespace-nowrap"><i class="fa-solid fa-book-open mr-2"></i>Lecciones 3D</button>
+                <button id="tab-dictionary" class="tab-btn py-3 font-bold text-sm text-slate-500 whitespace-nowrap"><i class="fa-solid fa-bookmark mr-2"></i>Mi Diccionario</button>
+                <button id="tab-chat" class="tab-btn py-3 font-bold text-sm text-slate-500 whitespace-nowrap"><i class="fa-solid fa-comments mr-2"></i>Chat Global</button>
+                <button id="tab-private-chat" class="tab-btn py-3 font-bold text-sm text-slate-500 whitespace-nowrap"><i class="fa-solid fa-user-lock mr-2"></i>Chat Privado</button>
+                <button id="tab-live" class="tab-btn py-3 font-bold text-sm text-slate-500 whitespace-nowrap"><i class="fa-solid fa-headset mr-2"></i>En Vivo</button>
+            </div>
+
+            <!-- SECTIONS -->
+            <section id="sec-lessons" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></section>
+
+            <section id="sec-dictionary" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+                    <h3 class="font-bold text-lg text-slate-800 dark:text-white">Agregar Frase Personal</h3>
+                    <form id="add-word-form" class="grid sm:grid-cols-3 gap-3">
+                        <input type="text" id="word-en" placeholder="Frase en Inglés" required class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none">
+                        <input type="text" id="word-es" placeholder="Traducción en Español" required class="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-3 rounded-xl text-xs transition">Guardar Frase</button>
+                    </form>
+                </div>
+                <div id="custom-words-list" class="grid sm:grid-cols-2 gap-4"></div>
+            </section>
+
+            <section id="sec-chat" class="hidden"></section>
+            <section id="sec-private-chat" class="hidden"></section>
+            <section id="sec-live" class="hidden"></section>
+
+        </div>
+    </main>
+
+    <!-- LESSON MODAL -->
+    <div id="view-lesson-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full text-white shadow-2xl space-y-6 relative">
+            <div class="flex items-center justify-between">
+                <span id="lesson-counter" class="text-xs font-mono font-bold text-indigo-400">1/5</span>
+                <button id="btn-close-lesson" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="lesson-progress" class="bg-indigo-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <div id="lesson-content" class="min-h-[250px] flex items-center justify-center"></div>
+            <button id="btn-next-step" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 font-bold text-sm rounded-xl transition shadow-lg">Siguiente</button>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT FILE -->
+    <script src="app.js"></script>
+</body>
+</html>
