@@ -759,7 +759,7 @@ window.submitWarAnswerOnline = function() {
 };
 
 // ==========================================
-// 📹 TRANSMISIONES EN VIVO (CONTROLES SIEMPRE VISIBLES + CLIC DIRECTO)
+// 📹 TRANSMISIONES EN VIVO (MUESTRA EL VIDEO EN TIEMPO REAL SIN PANTALLA NEGRA)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -802,7 +802,7 @@ function renderLiveStream() {
                         <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
 
-                    <!-- BARRA DE CONTROLES SIEMPRE VISIBLE PARA TU LIVE Y DÚO -->
+                    <!-- BARRA DE CONTROLES VISIBLE -->
                     <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2">
                         <button onclick="toggleDuoMute()" id="btn-duo-mute" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
@@ -839,7 +839,7 @@ function renderLiveStream() {
 let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
 
-// TRANSMITIR TU CAMARA
+// TRANSMITIR TU CÁMARA
 window.toggleHostingLive = async function() {
     const btn = document.getElementById('btn-toggle-live');
     const btnDuo = document.getElementById('btn-invite-duo');
@@ -851,8 +851,12 @@ window.toggleHostingLive = async function() {
     } else {
         try {
             localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            document.getElementById('live-video-player').srcObject = localMediaStream;
-            document.getElementById('live-video-player').muted = true;
+            const mainPlayer = document.getElementById('live-video-player');
+            if (mainPlayer) {
+                mainPlayer.srcObject = localMediaStream;
+                mainPlayer.muted = true;
+                mainPlayer.play().catch(e => console.log(e));
+            }
 
             if (window.Peer) {
                 peer = new Peer();
@@ -885,6 +889,7 @@ window.toggleHostingLive = async function() {
                         if (guestPlayer) {
                             guestPlayer.srcObject = guestStream;
                             guestPlayer.classList.remove('hidden');
+                            guestPlayer.play().catch(e => console.log(e));
                             showToast('👥 ¡Tu amigo se unió al Dúo en vivo!');
                         }
                     });
@@ -896,7 +901,7 @@ window.toggleHostingLive = async function() {
     }
 };
 
-// BOTONES DE CONTROL DE VIDEO Y AUDIO (SILENCIAR, PAUSAR, APAGAR)
+// BOTONES DE CONTROL DE VIDEO Y AUDIO
 window.toggleDuoMute = function() {
     if (localMediaStream) {
         const audioTrack = localMediaStream.getAudioTracks()[0];
@@ -1076,9 +1081,17 @@ async function connectToHostDuo(hostPeerId, hostName) {
             duoPeer.on('open', () => {
                 const call = duoPeer.call(hostPeerId, localMediaStream);
                 call.on('stream', (hostStream) => {
-                    document.getElementById('live-video-player').srcObject = hostStream;
-                    document.getElementById('live-guest-player').srcObject = localMediaStream;
-                    document.getElementById('live-guest-player').classList.remove('hidden');
+                    const mainPlayer = document.getElementById('live-video-player');
+                    if (mainPlayer) {
+                        mainPlayer.srcObject = hostStream;
+                        mainPlayer.play().catch(e => console.log(e));
+                    }
+                    const guestPlayer = document.getElementById('live-guest-player');
+                    if (guestPlayer) {
+                        guestPlayer.srcObject = localMediaStream;
+                        guestPlayer.classList.remove('hidden');
+                        guestPlayer.play().catch(e => console.log(e));
+                    }
                     showToast(`🔴 Transmitiendo en Dúo con ${hostName}`);
                 });
             });
@@ -1088,7 +1101,7 @@ async function connectToHostDuo(hostPeerId, hostName) {
     }
 }
 
-// SALAS ACTIVAS Y CONEXIÓN AL CLIC EN EL BOTÓN
+// SALAS ACTIVAS Y CONEXIÓN CORREGIDA AL CLIC
 function listenToActiveLiveRooms() {
     if (!db) return;
 
@@ -1118,29 +1131,50 @@ function listenToActiveLiveRooms() {
     });
 }
 
+// 🟢 FUNCIÓN CORREGIDA: HACE CLIC Y MUESTRA EL VIDEO SIN QUEDARSE EN NEGRO
 window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (localMediaStream) {
         showToast('Debes apagar tu transmisión antes de ver a otro usuario.', 'info');
         return;
     }
 
+    showToast(`🔄 Conectando con el Live de ${hostName}...`, 'info');
+
     if (window.Peer) {
         const viewerPeer = new Peer();
         viewerPeer.on('open', () => {
-            const call = viewerPeer.call(peerId);
-            call.on('stream', (remoteStream) => {
-                const player = document.getElementById('live-video-player');
-                if (player) {
-                    player.srcObject = remoteStream;
-                    player.muted = false;
-                }
-                const badge = document.getElementById('live-status-badge');
-                if (badge) {
-                    badge.innerText = `🔴 EN VIVO (${hostName})`;
-                    badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full animate-pulse z-10";
-                }
-                showToast(`📺 Conectado al Live de ${hostName}`);
-            });
+            // Creamos una transmisión ficticia/dummy para establecer la negociación de llamada bidireccional de PeerJS
+            const canvas = document.createElement('canvas');
+            canvas.width = 10;
+            canvas.height = 10;
+            const dummyStream = canvas.captureStream ? canvas.captureStream(1) : null;
+
+            const call = dummyStream ? viewerPeer.call(peerId, dummyStream) : viewerPeer.call(peerId);
+
+            if (call) {
+                call.on('stream', (remoteStream) => {
+                    const player = document.getElementById('live-video-player');
+                    if (player) {
+                        player.srcObject = remoteStream;
+                        player.muted = false;
+                        player.play().then(() => {
+                            const badge = document.getElementById('live-status-badge');
+                            if (badge) {
+                                badge.innerText = `🔴 EN VIVO (${hostName})`;
+                                badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full animate-pulse z-10";
+                            }
+                            showToast(`📺 ¡En vivo con ${hostName}!`);
+                        }).catch(err => {
+                            console.log("Error de reproducción automática:", err);
+                        });
+                    }
+                });
+            }
+        });
+
+        viewerPeer.on('error', (err) => {
+            console.error("PeerJS viewer error:", err);
+            showToast('No se logró conectar con la cámara del emisor.', 'info');
         });
     }
 
@@ -1241,7 +1275,7 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-// INICIALIZACIÓN
+// INICIALIZACIÓN DE LA APLICACIÓN Y EVENTOS GENERALES
 document.addEventListener('DOMContentLoaded', () => {
     initAuth();
 
