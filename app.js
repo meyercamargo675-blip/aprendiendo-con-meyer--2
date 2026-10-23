@@ -413,7 +413,7 @@ function renderGlobalChat() {
     };
 }
 
-// 🔒 CHAT PRIVADO PERSISTENTE + SOLICITUD DE AMISTAD
+// 🔒 CHAT PRIVADO ESTRICTO Y PERSISTENTE
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
     if (!secPrivate) return;
@@ -442,7 +442,7 @@ function renderPrivateChat() {
                         <i class="fa-solid fa-user-lock text-indigo-500"></i>
                         <h3 class="font-bold text-sm text-slate-800 dark:text-white" id="private-chat-header">Selecciona un chat</h3>
                     </div>
-                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Guardado Automático</span>
+                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Privado 1vs1</span>
                 </div>
 
                 <div id="private-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3">
@@ -541,6 +541,7 @@ function addContactToSavedList(target) {
     renderSavedPrivateContactsList();
 }
 
+// ABRIR CHAT PRIVADO ÚNICAMENTE PARA LOS DOS USUARIOS
 function openPrivateChat(chatId, targetName) {
     activePrivateChatId = chatId;
     addContactToSavedList(targetName);
@@ -552,6 +553,7 @@ function openPrivateChat(chatId, targetName) {
     if (privateUnsubscribe) privateUnsubscribe();
 
     if (db) {
+        // FILTRADO ESTRICTO POR EL ID ÚNICO DEL CHAT
         privateUnsubscribe = db.collection('privateChats').doc(chatId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
@@ -589,7 +591,7 @@ function openPrivateChat(chatId, targetName) {
 
         if (db) {
             db.collection('privateChats').doc(activePrivateChatId).collection('messages').add({
-                sender: myName, text, time: timeStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                sender: myName, chatId: activePrivateChatId, text, time: timeStr, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => { input.value = ''; });
         }
     };
@@ -1377,7 +1379,7 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-// INICIALIZACIÓN DE LA APLICACIÓN Y EVENTOS GENERALES
+// INICIALIZACIÓN DE LA APLICACIÓN Y VALIDACIÓN DE AUTENTICACIÓN
 document.addEventListener('DOMContentLoaded', () => {
     initAuth();
 
@@ -1396,18 +1398,40 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('name-field-container').classList.toggle('hidden', !isRegistering);
     };
 
+    // VALIDACIÓN ESTRICTA DE INICIO DE SESIÓN
     document.getElementById('auth-form').onsubmit = (e) => {
         e.preventDefault();
         const email = document.getElementById('input-email').value.trim().toLowerCase();
         const password = document.getElementById('input-password').value;
-        const name = document.getElementById('input-name').value.trim() || 'Meyer';
+        const name = document.getElementById('input-name').value.trim();
         const data = getUsersDB();
 
-        currentUser = data[email] || { email, password, name, xp: 50, streak: 1, customWords: [], privateContacts: [], seenHistory: [] };
-        if (!currentUser.seenHistory) currentUser.seenHistory = [];
-        if (!currentUser.privateContacts) currentUser.privateContacts = [];
-        saveCurrentUserData();
-        showMainApp();
+        if (isRegistering) {
+            if (!email || !password || !name) {
+                showToast('Por favor completa todos los campos.', 'info');
+                return;
+            }
+            currentUser = { email, password, name, xp: 50, streak: 1, customWords: [], privateContacts: [], seenHistory: [] };
+            saveCurrentUserData();
+            showMainApp();
+            showToast('🎉 Cuenta creada exitosamente.');
+        } else {
+            // MODO INICIAR SESIÓN: SOLO PERMITE SI EXISTE PREVIAMENTE
+            if (!data[email]) {
+                showToast('❌ Esta cuenta no existe. Haz clic en "Crear Cuenta" para registrarte.', 'info');
+                return;
+            }
+            if (data[email].password !== password) {
+                showToast('❌ Contraseña incorrecta.', 'info');
+                return;
+            }
+            currentUser = data[email];
+            if (!currentUser.seenHistory) currentUser.seenHistory = [];
+            if (!currentUser.privateContacts) currentUser.privateContacts = [];
+            saveCurrentUserData();
+            showMainApp();
+            showToast(`¡Bienvenido de nuevo, ${currentUser.name}!`);
+        }
     };
 
     document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('meyer_app_active_email'); showAuthModal(); };
