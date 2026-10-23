@@ -81,6 +81,7 @@ let localMediaStream = null;
 let warUnsubscribe = null;
 let currentRoomCode = '';
 let myRole = '';
+let currentFacingMode = 'user'; // 'user' para frontal, 'environment' para trasera
 
 // UTILS & TOASTS
 function showToast(message, type = 'success') {
@@ -760,7 +761,7 @@ window.submitWarAnswerOnline = function() {
 };
 
 // ==========================================
-// 📹 TRANSMISIONES EN VIVO (PANTALLA DÚO CORREGIDA, AUDIO Y EMPAREJAMIENTO ESTRICTO)
+// 📹 TRANSMISIONES EN VIVO (PANTALLA DÚO CELULAR/PC Y BOTÓN VOLTEAR CÁMARA)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -801,14 +802,17 @@ function renderLiveStream() {
                         SIN TRANSMISIÓN SELECCIONADA
                     </span>
                     
-                    <!-- PANTALLA DIVIDIDA PERFECTA PARA 2 VIDEOS CON AUDIO -->
+                    <!-- PANTALLA DIVIDIDA ADAPTADA PARA PC Y CELULAR -->
                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 h-[320px] bg-slate-950">
                         <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-900 border border-slate-800"></video>
-                        <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-900 border border-slate-800 hidden"></video>
+                        <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-900 border border-slate-800"></video>
                     </div>
 
-                    <!-- BARRA DE CONTROLES VISIBLE -->
-                    <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2">
+                    <!-- BARRA DE CONTROLES VISIBLE (CON BOTÓN VOLTEAR CÁMARA) -->
+                    <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center flex-wrap gap-1">
+                        <button onclick="toggleCameraFacing()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
+                            <i class="fa-solid fa-camera-rotate"></i><span>Voltear Cámara</span>
+                        </button>
                         <button onclick="toggleDuoMute()" id="btn-duo-mute" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
                         </button>
@@ -844,7 +848,7 @@ function renderLiveStream() {
 let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
 
-// TRANSMITIR TU CÁMARA
+// TRANSMITIR TU CÁMARA (CON SOPORTE FACINGMODE)
 window.toggleHostingLive = async function() {
     const btn = document.getElementById('btn-toggle-live');
     const btnDuo = document.getElementById('btn-invite-duo');
@@ -855,12 +859,15 @@ window.toggleHostingLive = async function() {
         stopDuoLive();
     } else {
         try {
-            localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localMediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: currentFacingMode }, 
+                audio: true 
+            });
+
             const guestPlayer = document.getElementById('live-guest-player');
             if (guestPlayer) {
                 guestPlayer.srcObject = localMediaStream;
-                guestPlayer.muted = true; // Para evitar eco con tu propia voz
-                guestPlayer.classList.remove('hidden');
+                guestPlayer.muted = true; // Silenciado localmente para evitar eco
                 guestPlayer.play().catch(e => console.log(e));
             }
 
@@ -895,7 +902,7 @@ window.toggleHostingLive = async function() {
                         const mainPlayer = document.getElementById('live-video-player');
                         if (mainPlayer) {
                             mainPlayer.srcObject = guestStream;
-                            mainPlayer.muted = false; // Sonido habilitado para hablar
+                            mainPlayer.muted = false; // Audio habilitado para hablar
                             mainPlayer.play().catch(e => console.log(e));
                             showToast('👥 ¡Un usuario se unió a tu transmisión!');
                         }
@@ -908,7 +915,37 @@ window.toggleHostingLive = async function() {
     }
 };
 
-// EMPAREJAMIENTO AL AZAR (REQUIERE ESTAR EN LIVE)
+// BOTÓN PARA VOLTEAR CÁMARA (FRONTAL / TRASERA)
+window.toggleCameraFacing = async function() {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    if (localMediaStream) {
+        localMediaStream.getTracks().forEach(track => track.stop());
+        try {
+            localMediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: currentFacingMode }, 
+                audio: true 
+            });
+            const guestPlayer = document.getElementById('live-guest-player');
+            if (guestPlayer) {
+                guestPlayer.srcObject = localMediaStream;
+                guestPlayer.muted = true;
+                guestPlayer.play().catch(e => console.log(e));
+            }
+            if (activeCall && activeCall.peerConnection) {
+                const videoTrack = localMediaStream.getVideoTracks()[0];
+                const sender = activeCall.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) sender.replaceTrack(videoTrack);
+            }
+            showToast(currentFacingMode === 'user' ? '🔄 Cámara frontal activada' : '🔄 Cámara trasera activada', 'info');
+        } catch (e) {
+            showToast('No se pudo voltear la cámara.', 'info');
+        }
+    } else {
+        showToast('Debes estar transmitiendo en vivo para voltear la cámara.', 'info');
+    }
+};
+
+// EMPAREJAMIENTO AL AZAR (ESTRICTO: REQUIERE TENER LIVE PRENDIDO)
 window.startRandomDuoMatch = async function() {
     if (!localMediaStream) {
         showToast('⚠️ Debes encender "Transmitir Mi Cámara" primero para poder emparejar.', 'info');
@@ -1014,7 +1051,6 @@ window.stopDuoLive = function() {
     const guestPlayer = document.getElementById('live-guest-player');
     if (guestPlayer) {
         guestPlayer.srcObject = null;
-        guestPlayer.classList.add('hidden');
     }
 
     if (peer) { peer.destroy(); peer = null; }
@@ -1138,7 +1174,10 @@ window.acceptDuoInvite = function(hostPeerId, hostName) {
 
 async function connectToHostDuo(hostPeerId, hostName) {
     try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localMediaStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: currentFacingMode }, 
+            audio: true 
+        });
         if (window.Peer) {
             const duoPeer = new Peer();
             duoPeer.on('open', () => {
@@ -1154,7 +1193,6 @@ async function connectToHostDuo(hostPeerId, hostName) {
                     if (guestPlayer) {
                         guestPlayer.srcObject = localMediaStream;
                         guestPlayer.muted = true;
-                        guestPlayer.classList.remove('hidden');
                         guestPlayer.play().catch(e => console.log(e));
                     }
                     showToast(`🔴 Transmitiendo en Dúo con ${hostName}`);
