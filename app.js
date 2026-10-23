@@ -93,7 +93,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.remove(); }, 3500);
 }
 
-// 🎙️ SISTEMA GLOBAL DE RECONOCIMIENTO DE VOZ (MICRÓFONO)
+// 🎙️ SISTEMA GLOBAL DE RECONOCIMIENTO DE VOZ
 function startSpeechRecognition(callback, lang = 'en-US') {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -133,6 +133,7 @@ function initAuth() {
     if (activeEmail && data[activeEmail]) {
         currentUser = data[activeEmail];
         if (!currentUser.seenHistory) currentUser.seenHistory = [];
+        if (!currentUser.privateContacts) currentUser.privateContacts = [];
         showMainApp();
     } else { showAuthModal(); }
 }
@@ -187,7 +188,7 @@ function getUnseenItems(categoryFilter) {
     return available;
 }
 
-// 📚 RENDERIZADO DE LECCIONES 3D CON CORRECCIÓN DE VOZ Y QUIZZES
+// 📚 RENDERIZADO DE LECCIONES 3D
 function renderLessons() {
     const container = document.getElementById('sec-lessons');
     const categories = [
@@ -339,7 +340,7 @@ window.checkQuizAnswer = function(selectedIdx, correctIdx) {
     }
 };
 
-// 💬 CHAT GLOBAL EN TIEMPO REAL CON MICRÓFONO
+// 💬 CHAT GLOBAL EN TIEMPO REAL
 function renderGlobalChat() {
     const secChat = document.getElementById('sec-chat');
     if (!secChat) return;
@@ -410,7 +411,7 @@ function renderGlobalChat() {
     };
 }
 
-// 🔒 CHAT PRIVADO CORREGIDO Y FUNCIONAL CON MICRÓFONO
+// 🔒 CHAT PRIVADO PERSISTENTE + SOLICITUD DE AMISTAD
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
     if (!secPrivate) return;
@@ -419,19 +420,17 @@ function renderPrivateChat() {
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid sm:grid-cols-3 h-[500px] overflow-hidden">
             <div class="border-r border-slate-200 dark:border-slate-700 p-4 space-y-4 bg-slate-50 dark:bg-slate-900/50 flex flex-col">
                 <div>
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Nuevo Chat Privado</h4>
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Enviar Solicitud de Amistad</h4>
                     <div class="flex space-x-2">
                         <input type="text" id="private-target-user" placeholder="Nombre de usuario" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white outline-none">
-                        <button onclick="startNewPrivateChat()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">
-                            <i class="fa-solid fa-plus"></i>
+                        <button onclick="sendFriendRequest()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">
+                            <i class="fa-solid fa-user-plus"></i>
                         </button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-2">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mt-2 mb-1">Conversaciones</h4>
-                    <div id="private-chats-list" class="space-y-1">
-                        <p class="text-[11px] text-slate-400">Añade el nombre de tu amigo arriba.</p>
-                    </div>
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mt-2 mb-1">Mis Conversaciones</h4>
+                    <div id="private-chats-list" class="space-y-1"></div>
                 </div>
             </div>
 
@@ -441,13 +440,13 @@ function renderPrivateChat() {
                         <i class="fa-solid fa-user-lock text-indigo-500"></i>
                         <h3 class="font-bold text-sm text-slate-800 dark:text-white" id="private-chat-header">Selecciona un chat</h3>
                     </div>
-                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Sincronizado</span>
+                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Guardado Automático</span>
                 </div>
 
                 <div id="private-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3">
                     <div class="flex flex-col items-center justify-center h-full text-center text-slate-400 text-xs">
                         <i class="fa-solid fa-comments text-3xl mb-2 text-indigo-500/40"></i>
-                        <p>Escribe el nombre de tu amigo a la izquierda para conectar.</p>
+                        <p>Selecciona un contacto a la izquierda para chatear.</p>
                     </div>
                 </div>
 
@@ -459,39 +458,91 @@ function renderPrivateChat() {
             </div>
         </div>
     `;
+
+    renderSavedPrivateContactsList();
+    listenForFriendRequests();
 }
 
 let activePrivateChatId = null;
 let privateUnsubscribe = null;
 
-window.startNewPrivateChat = function() {
+// ENVIAR SOLICITUD DE AMISTAD EN TIEMPO REAL
+window.sendFriendRequest = function() {
     const targetInput = document.getElementById('private-target-user');
     const target = targetInput ? targetInput.value.trim() : '';
     if (!target) { showToast('Escribe el nombre del usuario.', 'info'); return; }
 
     const myName = currentUser ? currentUser.name : 'Meyer';
-    const chatId = [myName, target].sort().join('_').toLowerCase().replace(/\s+/g, '');
-
-    const listContainer = document.getElementById('private-chats-list');
-    if (listContainer) {
-        if (listContainer.querySelector('p')) listContainer.innerHTML = '';
-        
-        if (!document.getElementById(`chat-item-${chatId}`)) {
-            const item = document.createElement('div');
-            item.id = `chat-item-${chatId}`;
-            item.className = "p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-xl cursor-pointer text-xs font-bold text-slate-700 dark:text-white flex items-center justify-between transition";
-            item.innerHTML = `<span><i class="fa-solid fa-user mr-2 text-indigo-500"></i>${target}</span><i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>`;
-            item.onclick = () => openPrivateChat(chatId, target);
-            listContainer.appendChild(item);
-        }
+    if (target.toLowerCase() === myName.toLowerCase()) {
+        showToast('No puedes enviarte solicitud a ti mismo.', 'info');
+        return;
     }
 
-    targetInput.value = '';
-    openPrivateChat(chatId, target);
+    if (db) {
+        db.collection('friendRequests').doc(target.toLowerCase().replace(/\s+/g, '')).set({
+            fromUser: myName,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            showToast(`📩 Solicitud de amistad enviada a ${target}`);
+            addContactToSavedList(target);
+            targetInput.value = '';
+        });
+    }
 };
+
+// NOTIFICACIÓN RECIBIDA EN CHAT PRIVADO
+function listenForFriendRequests() {
+    if (!db || !currentUser) return;
+    const myDocId = currentUser.name.toLowerCase().replace(/\s+/g, '');
+
+    db.collection('friendRequests').doc(myDocId).onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            showToast(`🔔 ${data.fromUser} quiere ser tu amigo en Chat Privado.`, 'info');
+            addContactToSavedList(data.fromUser);
+        }
+    });
+}
+
+// PERSISTENCIA: MOSTRAR LISTA DE CONTACTOS GUARDADOS
+function renderSavedPrivateContactsList() {
+    const listContainer = document.getElementById('private-chats-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    if (!currentUser.privateContacts) currentUser.privateContacts = [];
+
+    if (currentUser.privateContacts.length === 0) {
+        listContainer.innerHTML = `<p class="text-[11px] text-slate-400 p-2">Escribe el nombre arriba para añadir un amigo.</p>`;
+        return;
+    }
+
+    const myName = currentUser ? currentUser.name : 'Meyer';
+
+    currentUser.privateContacts.forEach(target => {
+        const chatId = [myName, target].sort().join('_').toLowerCase().replace(/\s+/g, '');
+        const item = document.createElement('div');
+        item.id = `chat-item-${chatId}`;
+        item.className = "p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-xl cursor-pointer text-xs font-bold text-slate-700 dark:text-white flex items-center justify-between transition mb-1";
+        item.innerHTML = `<span><i class="fa-solid fa-user mr-2 text-indigo-500"></i>${target}</span><i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>`;
+        item.onclick = () => openPrivateChat(chatId, target);
+        listContainer.appendChild(item);
+    });
+}
+
+function addContactToSavedList(target) {
+    if (!currentUser.privateContacts) currentUser.privateContacts = [];
+    if (!currentUser.privateContacts.includes(target)) {
+        currentUser.privateContacts.push(target);
+        saveCurrentUserData();
+    }
+    renderSavedPrivateContactsList();
+}
 
 function openPrivateChat(chatId, targetName) {
     activePrivateChatId = chatId;
+    addContactToSavedList(targetName);
+
     document.getElementById('private-chat-header').innerText = `Chat Privado con ${targetName}`;
     document.getElementById('private-input-text').disabled = false;
     document.getElementById('private-send-btn').disabled = false;
@@ -542,7 +593,7 @@ function openPrivateChat(chatId, targetName) {
     };
 }
 
-// ⚔️ GUERRA 1VS1 CON MICRÓFONO INTEGRADO
+// ⚔️ GUERRA 1VS1 ONLINE
 window.openWarSetup = function() {
     const modalHTML = `
         <div id="war-setup-modal" class="fixed inset-0 bg-slate-900/90 z-50 backdrop-blur-md flex items-center justify-center p-4">
@@ -708,7 +759,7 @@ window.submitWarAnswerOnline = function() {
 };
 
 // ==========================================
-// 📹 TRANSMISIONES EN VIVO + MODO DÚO (MODAL ELEGANTE + CONTROLES INVITADO)
+// 📹 TRANSMISIONES EN VIVO (CONTROLES SIEMPRE VISIBLES + CLIC DIRECTO)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -731,7 +782,7 @@ function renderLiveStream() {
                 </div>
             </div>
 
-            <!-- SELECTOR DE SALAS ACTIVAS EN EL MUNDO -->
+            <!-- SELECTOR DE SALAS ACTIVAS -->
             <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Transmisiones Activas en el Mundo:</span>
                 <div id="live-rooms-list" class="flex flex-wrap gap-2">
@@ -739,20 +790,19 @@ function renderLiveStream() {
                 </div>
             </div>
 
-            <!-- CONTENEDOR PRINCIPAL: VIDEO (PANTALLA DIVIDIDA DÚO) + CHAT -->
+            <!-- CONTENEDOR PRINCIPAL: VIDEO + CHAT -->
             <div class="grid md:grid-cols-3 gap-4 h-[400px]">
                 <div class="md:col-span-2 relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col">
                     <span id="live-status-badge" class="absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-10">
                         SIN TRANSMISIÓN SELECCIONADA
                     </span>
                     
-                    <!-- GRID DE VIDEOS -->
                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 h-[320px]">
-                        <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover rounded-xl"></video>
+                        <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950"></video>
                         <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
 
-                    <!-- NUEVOS CONTROLES PARA EL INVITADO DÚO (SILENCIAR, PAUSAR, APAGAR) -->
+                    <!-- BARRA DE CONTROLES SIEMPRE VISIBLE PARA TU LIVE Y DÚO -->
                     <div id="duo-controls-bar" class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2">
                         <button onclick="toggleDuoMute()" id="btn-duo-mute" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
@@ -789,7 +839,7 @@ function renderLiveStream() {
 let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
 
-// 🟢 TRANSMITIR EN TU PROPIA SALA (BORRADO DEFINITIVO EN FIRESTORE Y LIMPIEZA LOCAL)
+// TRANSMITIR TU CAMARA
 window.toggleHostingLive = async function() {
     const btn = document.getElementById('btn-toggle-live');
     const btnDuo = document.getElementById('btn-invite-duo');
@@ -797,48 +847,7 @@ window.toggleHostingLive = async function() {
     const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
 
     if (localMediaStream) {
-        // 1. Apagar transmisiones de cámara/micrófono
-        localMediaStream.getTracks().forEach(track => track.stop());
-        localMediaStream = null;
-
-        // 2. Limpiar reproductores
-        const mainPlayer = document.getElementById('live-video-player');
-        if (mainPlayer) mainPlayer.srcObject = null;
-
-        const guestPlayer = document.getElementById('live-guest-player');
-        if (guestPlayer) {
-            guestPlayer.srcObject = null;
-            guestPlayer.classList.add('hidden');
-        }
-
-        // 3. Destruir peer
-        if (peer) { 
-            peer.destroy(); 
-            peer = null; 
-        }
-
-        // 4. ELIMINAR REGISTRO DE FIRESTORE
-        if (db) { 
-            db.collection('liveRooms').doc(myRoomId).delete().then(() => {
-                console.log("Sala eliminada de Firestore correctamente.");
-            }).catch(err => console.warn(err)); 
-        }
-
-        // 5. Restablecer UI
-        if (btn) {
-            btn.innerText = "Transmitir Mi Cámara 📹";
-            btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
-        }
-        if (btnDuo) btnDuo.classList.add('hidden');
-
-        const badge = document.getElementById('live-status-badge');
-        if (badge) {
-            badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
-            badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-10";
-        }
-
-        activeLiveRoomId = null;
-        showToast('⏹️ Transmisión finalizada.', 'info');
+        stopDuoLive();
     } else {
         try {
             localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -887,7 +896,7 @@ window.toggleHostingLive = async function() {
     }
 };
 
-// 🎙️ NUEVAS FUNCIONES DE CONTROL PARA EL INVITADO DÚO
+// BOTONES DE CONTROL DE VIDEO Y AUDIO (SILENCIAR, PAUSAR, APAGAR)
 window.toggleDuoMute = function() {
     if (localMediaStream) {
         const audioTrack = localMediaStream.getAudioTracks()[0];
@@ -927,19 +936,45 @@ window.toggleDuoPauseCam = function() {
 };
 
 window.stopDuoLive = function() {
+    const myName = currentUser ? currentUser.name : 'Meyer';
+    const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
+
     if (localMediaStream) {
         localMediaStream.getTracks().forEach(track => track.stop());
         localMediaStream = null;
     }
+
+    const mainPlayer = document.getElementById('live-video-player');
+    if (mainPlayer) mainPlayer.srcObject = null;
+
     const guestPlayer = document.getElementById('live-guest-player');
     if (guestPlayer) {
         guestPlayer.srcObject = null;
         guestPlayer.classList.add('hidden');
     }
-    showToast('🛑 Has salido de la transmisión Dúo.', 'info');
+
+    if (peer) { peer.destroy(); peer = null; }
+
+    if (db) {
+        db.collection('liveRooms').doc(myRoomId).delete().catch(err => console.warn(err));
+    }
+
+    const btn = document.getElementById('btn-toggle-live');
+    if (btn) {
+        btn.innerText = "Transmitir Mi Cámara 📹";
+        btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
+    }
+
+    const badge = document.getElementById('live-status-badge');
+    if (badge) {
+        badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
+        badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-10";
+    }
+
+    showToast('🛑 Transmisión apagada.', 'info');
 };
 
-// 🤝 MODAL ELEGANTE PARA INVITAR A DÚO (REEMPLAZA EL PROMPT NATIVO)
+// INVITAR A DÚO
 window.inviteFriendToDuo = function() {
     const existingModal = document.getElementById('duo-input-modal');
     if (existingModal) existingModal.remove();
@@ -975,14 +1010,10 @@ window.inviteFriendToDuo = function() {
 window.sendDuoInvitationAction = function() {
     const inputField = document.getElementById('duo-friend-name-input');
     const friendName = inputField ? inputField.value.trim() : '';
-    
-    if (!friendName) {
-        showToast('Escribe un nombre válido.', 'info');
-        return;
-    }
+    if (!friendName) { showToast('Escribe un nombre válido.', 'info'); return; }
 
     const myName = currentUser ? currentUser.name : 'Meyer';
-    if (db) {
+    if (db && peer) {
         db.collection('duoInvitations').doc(friendName.toLowerCase().trim()).set({
             hostName: myName,
             hostPeerId: peer.id,
@@ -994,14 +1025,12 @@ window.sendDuoInvitationAction = function() {
     }
 };
 
-// 🔔 NOTIFICACIÓN FLOTANTE ELEGANTE PARA INVITACIONES A DÚO
 function listenForDuoInvitations() {
     if (!db || !currentUser) return;
 
     db.collection('duoInvitations').doc(currentUser.name.toLowerCase().trim()).onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
-            
             const oldCard = document.getElementById('duo-invite-card');
             if (oldCard) oldCard.remove();
 
@@ -1035,7 +1064,6 @@ function listenForDuoInvitations() {
 window.acceptDuoInvite = function(hostPeerId, hostName) {
     const card = document.getElementById('duo-invite-card');
     if (card) card.remove();
-    
     db.collection('duoInvitations').doc(currentUser.name.toLowerCase().trim()).delete();
     connectToHostDuo(hostPeerId, hostName);
 };
@@ -1060,7 +1088,7 @@ async function connectToHostDuo(hostPeerId, hostName) {
     }
 }
 
-// 🌍 LISTAR TODAS LAS SALAS EN VIVO ACTIVAS (FILTRADO AUTOMÁTICO EN TIEMPO REAL)
+// SALAS ACTIVAS Y CONEXIÓN AL CLIC EN EL BOTÓN
 function listenToActiveLiveRooms() {
     if (!db) return;
 
@@ -1090,7 +1118,6 @@ function listenToActiveLiveRooms() {
     });
 }
 
-// 👁️ VER EL LIVE DE ALGUIEN EN ESPECÍFICO (AL HACER CLIC)
 window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (localMediaStream) {
         showToast('Debes apagar tu transmisión antes de ver a otro usuario.', 'info');
@@ -1121,7 +1148,6 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
     connectToLiveChat(roomId, hostName);
 };
 
-// 💬 CHAT EXCLUSIVO DE CADA SALA
 function connectToLiveChat(roomId, hostName) {
     document.getElementById('live-chat-header').innerText = `💬 Chat: Live de ${hostName}`;
     document.getElementById('live-chat-input').disabled = false;
@@ -1204,7 +1230,18 @@ function speakText(text) {
     }
 }
 
-// INICIALIZACIÓN DE LA APLICACIÓN Y EVENTOS GENERALES
+// LIMPIEZA AUTOMÁTICA AL CERRAR PÁGINA
+window.addEventListener('beforeunload', () => {
+    if (localMediaStream && currentUser) {
+        const myName = currentUser.name || 'Meyer';
+        const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
+        if (db) {
+            db.collection('liveRooms').doc(myRoomId).delete();
+        }
+    }
+});
+
+// INICIALIZACIÓN
 document.addEventListener('DOMContentLoaded', () => {
     initAuth();
 
@@ -1230,8 +1267,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = document.getElementById('input-name').value.trim() || 'Meyer';
         const data = getUsersDB();
 
-        currentUser = data[email] || { email, password, name, xp: 50, streak: 1, customWords: [], seenHistory: [] };
+        currentUser = data[email] || { email, password, name, xp: 50, streak: 1, customWords: [], privateContacts: [], seenHistory: [] };
         if (!currentUser.seenHistory) currentUser.seenHistory = [];
+        if (!currentUser.privateContacts) currentUser.privateContacts = [];
         saveCurrentUserData();
         showMainApp();
     };
@@ -1278,14 +1316,3 @@ function switchTab(tab) {
         document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
     });
 }
-
-// LIMPIEZA AUTOMÁTICA AL CERRAR O RECARGAR LA PÁGINA
-window.addEventListener('beforeunload', () => {
-    if (localMediaStream && currentUser) {
-        const myName = currentUser.name || 'Meyer';
-        const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
-        if (db) {
-            db.collection('liveRooms').doc(myRoomId).delete();
-        }
-    }
-});
