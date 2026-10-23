@@ -76,6 +76,7 @@ let currentStepIndex = 0;
 
 // WEBRTC Y GUERRA ONLINE
 let peer = null;
+let activeCall = null;
 let localMediaStream = null;
 let warUnsubscribe = null;
 let currentRoomCode = '';
@@ -759,7 +760,7 @@ window.submitWarAnswerOnline = function() {
 };
 
 // ==========================================
-// 📹 TRANSMISIONES EN VIVO (MUESTRA EL VIDEO EN TIEMPO REAL SIN PANTALLA NEGRA)
+// 📹 TRANSMISIONES EN VIVO (CON EMPAREJAMIENTO AZAR Y SALIR DE DÚO)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -772,7 +773,10 @@ function renderLiveStream() {
                     <span class="w-3 h-3 bg-rose-500 rounded-full animate-ping"></span>
                     <h3 class="text-lg font-black">Transmisiones en Vivo 🔴</h3>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-random-duo" onclick="startRandomDuoMatch()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 font-bold text-xs rounded-xl transition shadow-md flex items-center space-x-1">
+                        <i class="fa-solid fa-shuffle"></i><span>Emparejar al Azar 🌐</span>
+                    </button>
                     <button id="btn-invite-duo" onclick="inviteFriendToDuo()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs rounded-xl transition hidden shadow-md flex items-center space-x-1">
                         <i class="fa-solid fa-user-plus"></i><span>Invitar a Dúo</span>
                     </button>
@@ -883,6 +887,7 @@ window.toggleHostingLive = async function() {
                 });
 
                 peer.on('call', (call) => {
+                    activeCall = call;
                     call.answer(localMediaStream);
                     call.on('stream', (guestStream) => {
                         const guestPlayer = document.getElementById('live-guest-player');
@@ -898,6 +903,67 @@ window.toggleHostingLive = async function() {
         } catch (e) {
             showToast('Error de acceso a cámara o micrófono.', 'info');
         }
+    }
+};
+
+// EMPAREJAMIENTO AL AZAR GLOBAL (RANDOM MATCH DUO)
+window.startRandomDuoMatch = async function() {
+    const myName = currentUser ? currentUser.name : 'Meyer';
+    showToast('🔎 Buscando a alguien en el mundo para transmitir...', 'info');
+
+    try {
+        if (!localMediaStream) {
+            localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const guestPlayer = document.getElementById('live-guest-player');
+            if (guestPlayer) {
+                guestPlayer.srcObject = localMediaStream;
+                guestPlayer.classList.remove('hidden');
+                guestPlayer.play().catch(e => console.log(e));
+            }
+        }
+
+        if (!peer) peer = new Peer();
+
+        peer.on('open', (myPeerId) => {
+            if (!db) return;
+
+            db.collection('randomQueue').get().then(snapshot => {
+                let foundMatch = false;
+
+                snapshot.forEach(doc => {
+                    if (!foundMatch && doc.id !== myName.toLowerCase().trim()) {
+                        const target = doc.data();
+                        foundMatch = true;
+
+                        // Nos conectamos al usuario esperando
+                        activeCall = peer.call(target.peerId, localMediaStream);
+                        activeCall.on('stream', (remoteStream) => {
+                            const mainPlayer = document.getElementById('live-video-player');
+                            if (mainPlayer) {
+                                mainPlayer.srcObject = remoteStream;
+                                mainPlayer.play().catch(e => console.log(e));
+                            }
+                            showToast(`🎲 ¡Emparejado al azar con ${target.userName}!`);
+                        });
+
+                        // Borramos de la cola de espera
+                        db.collection('randomQueue').doc(doc.id).delete();
+                    }
+                });
+
+                if (!foundMatch) {
+                    // Si no hay nadie, nos anotamos en la cola
+                    db.collection('randomQueue').doc(myName.toLowerCase().trim()).set({
+                        userName: myName,
+                        peerId: myPeerId,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    showToast('⏳ Estás en cola de espera. Se conectará el próximo en entrar.', 'info');
+                }
+            });
+        });
+    } catch (e) {
+        showToast('Debes permitir acceso a cámara para emparejar.', 'info');
     }
 };
 
@@ -940,9 +1006,15 @@ window.toggleDuoPauseCam = function() {
     }
 };
 
+// SALIR DE DÚO O TRANSMISIÓN COMPLETA
 window.stopDuoLive = function() {
     const myName = currentUser ? currentUser.name : 'Meyer';
     const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
+
+    if (activeCall) {
+        activeCall.close();
+        activeCall = null;
+    }
 
     if (localMediaStream) {
         localMediaStream.getTracks().forEach(track => track.stop());
@@ -962,6 +1034,7 @@ window.stopDuoLive = function() {
 
     if (db) {
         db.collection('liveRooms').doc(myRoomId).delete().catch(err => console.warn(err));
+        db.collection('randomQueue').doc(myName.toLowerCase().trim()).delete().catch(err => console.warn(err));
     }
 
     const btn = document.getElementById('btn-toggle-live');
@@ -976,7 +1049,7 @@ window.stopDuoLive = function() {
         badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full border border-slate-700 z-10";
     }
 
-    showToast('🛑 Transmisión apagada.', 'info');
+    showToast('🛑 Saliste del Live / Transmisión.', 'info');
 };
 
 // INVITAR A DÚO
@@ -1079,8 +1152,8 @@ async function connectToHostDuo(hostPeerId, hostName) {
         if (window.Peer) {
             const duoPeer = new Peer();
             duoPeer.on('open', () => {
-                const call = duoPeer.call(hostPeerId, localMediaStream);
-                call.on('stream', (hostStream) => {
+                activeCall = duoPeer.call(hostPeerId, localMediaStream);
+                activeCall.on('stream', (hostStream) => {
                     const mainPlayer = document.getElementById('live-video-player');
                     if (mainPlayer) {
                         mainPlayer.srcObject = hostStream;
@@ -1131,7 +1204,7 @@ function listenToActiveLiveRooms() {
     });
 }
 
-// 🟢 FUNCIÓN CORREGIDA: HACE CLIC Y MUESTRA EL VIDEO SIN QUEDARSE EN NEGRO
+// VER CUALQUIER LIVE EN TIEMPO REAL
 window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (localMediaStream) {
         showToast('Debes apagar tu transmisión antes de ver a otro usuario.', 'info');
@@ -1143,16 +1216,15 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (window.Peer) {
         const viewerPeer = new Peer();
         viewerPeer.on('open', () => {
-            // Creamos una transmisión ficticia/dummy para establecer la negociación de llamada bidireccional de PeerJS
             const canvas = document.createElement('canvas');
             canvas.width = 10;
             canvas.height = 10;
             const dummyStream = canvas.captureStream ? canvas.captureStream(1) : null;
 
-            const call = dummyStream ? viewerPeer.call(peerId, dummyStream) : viewerPeer.call(peerId);
+            activeCall = dummyStream ? viewerPeer.call(peerId, dummyStream) : viewerPeer.call(peerId);
 
-            if (call) {
-                call.on('stream', (remoteStream) => {
+            if (activeCall) {
+                activeCall.on('stream', (remoteStream) => {
                     const player = document.getElementById('live-video-player');
                     if (player) {
                         player.srcObject = remoteStream;
@@ -1271,6 +1343,7 @@ window.addEventListener('beforeunload', () => {
         const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
         if (db) {
             db.collection('liveRooms').doc(myRoomId).delete();
+            db.collection('randomQueue').doc(myName.toLowerCase().trim()).delete();
         }
     }
 });
