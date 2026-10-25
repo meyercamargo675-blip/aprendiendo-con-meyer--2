@@ -129,6 +129,36 @@ function saveCurrentUserData() {
     localStorage.setItem('meyer_app_active_email', currentUser.email);
 }
 
+// 📊 SISTEMA DE CÁLCULO DE RACHA DIARIA AUTOMÁTICA
+function checkAndUpdateStreak() {
+    if (!currentUser) return;
+    
+    const today = new Date().toDateString();
+    const lastLogin = currentUser.lastLoginDate;
+
+    if (!lastLogin) {
+        currentUser.streak = 1;
+        currentUser.lastLoginDate = today;
+    } else if (lastLogin === today) {
+        // Ya inició sesión hoy, se queda igual
+    } else {
+        const lastDate = new Date(lastLogin);
+        const currentDate = new Date(today);
+        const diffTime = Math.abs(currentDate - lastDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            currentUser.streak = (currentUser.streak || 1) + 1;
+            currentUser.lastLoginDate = today;
+            showToast(`🔥 ¡Racha aumentada a ${currentUser.streak} días!`, 'success');
+        } else if (diffDays > 1) {
+            currentUser.streak = 1;
+            currentUser.lastLoginDate = today;
+        }
+    }
+    saveCurrentUserData();
+}
+
 function initAuth() {
     const activeEmail = localStorage.getItem('meyer_app_active_email');
     const data = getUsersDB();
@@ -149,6 +179,8 @@ function showMainApp() {
     document.getElementById('auth-modal').classList.add('hidden');
     document.getElementById('view-dashboard').classList.remove('hidden');
     document.getElementById('btn-logout').classList.remove('hidden');
+    
+    checkAndUpdateStreak(); // 👈 Actualiza la racha automáticamente aquí
     updateUI();
 }
 
@@ -193,6 +225,7 @@ function getUnseenItems(categoryFilter) {
 // 📚 RENDERIZADO DE LECCIONES 3D
 function renderLessons() {
     const container = document.getElementById('sec-lessons');
+    if (!container) return;
     const categories = [
         { id: 'cat-basic', title: 'Vocabulario Básico Nuevo', category: 'Básico', icon: 'fa-hand-wave' },
         { id: 'cat-work', title: 'Trabajo y Tecnología Nueva', category: 'Trabajo', icon: 'fa-laptop-code' },
@@ -1346,6 +1379,7 @@ function connectToLiveChat(roomId, hostName) {
 // DICCIONARIO PERSONALIZADO CON MICRÓFONO
 function renderCustomWords() {
     const container = document.getElementById('custom-words-list');
+    if (!container) return;
     if (!currentUser || !currentUser.customWords || !currentUser.customWords.length) {
         container.innerHTML = `<p class="text-sm text-slate-400 col-span-2 text-center py-4">No hay palabras guardadas.</p>`;
         return;
@@ -1405,86 +1439,114 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    document.getElementById('btn-toggle-auth').onclick = () => {
-        isRegistering = !isRegistering;
-        document.getElementById('auth-title').innerText = isRegistering ? 'Crear Cuenta' : '¡Hola! Soy Meyer';
-        document.getElementById('name-field-container').classList.toggle('hidden', !isRegistering);
-    };
+    const btnToggleAuth = document.getElementById('btn-toggle-auth');
+    if (btnToggleAuth) {
+        btnToggleAuth.onclick = () => {
+            isRegistering = !isRegistering;
+            document.getElementById('auth-title').innerText = isRegistering ? 'Crear Cuenta' : '¡Hola! Soy Meyer';
+            document.getElementById('name-field-container').classList.toggle('hidden', !isRegistering);
+        };
+    }
 
     // VALIDACIÓN ESTRICTA DE INICIO DE SESIÓN
-    document.getElementById('auth-form').onsubmit = (e) => {
-        e.preventDefault();
-        const email = document.getElementById('input-email').value.trim().toLowerCase();
-        const password = document.getElementById('input-password').value;
-        const name = document.getElementById('input-name').value.trim();
-        const data = getUsersDB();
+    const authForm = document.getElementById('auth-form');
+    if (authForm) {
+        authForm.onsubmit = (e) => {
+            e.preventDefault();
+            const email = document.getElementById('input-email').value.trim().toLowerCase();
+            const password = document.getElementById('input-password').value;
+            const nameInput = document.getElementById('input-name');
+            const name = nameInput ? nameInput.value.trim() : 'Meyer';
+            const data = getUsersDB();
 
-        if (isRegistering) {
-            if (!email || !password || !name) {
-                showToast('Por favor completa todos los campos.', 'info');
-                return;
+            if (isRegistering) {
+                if (!email || !password || !name) {
+                    showToast('Por favor completa todos los campos.', 'info');
+                    return;
+                }
+                currentUser = { email, password, name, xp: 50, streak: 1, lastLoginDate: new Date().toDateString(), customWords: [], privateContacts: [], seenHistory: [] };
+                saveCurrentUserData();
+                showMainApp();
+                showToast('🎉 Cuenta creada exitosamente.');
+            } else {
+                if (!data[email]) {
+                    showToast('❌ Esta cuenta no existe. Haz clic en "Crear Cuenta" para registrarte.', 'info');
+                    return;
+                }
+                if (data[email].password !== password) {
+                    showToast('❌ Contraseña incorrecta.', 'info');
+                    return;
+                }
+                currentUser = data[email];
+                if (!currentUser.seenHistory) currentUser.seenHistory = [];
+                if (!currentUser.privateContacts) currentUser.privateContacts = [];
+                saveCurrentUserData();
+                showMainApp();
+                showToast(`¡Bienvenido de nuevo, ${currentUser.name}!`);
             }
-            currentUser = { email, password, name, xp: 50, streak: 1, customWords: [], privateContacts: [], seenHistory: [] };
+        };
+    }
+
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) btnLogout.onclick = () => { localStorage.removeItem('meyer_app_active_email'); showAuthModal(); };
+
+    const tabLessons = document.getElementById('tab-lessons');
+    if (tabLessons) tabLessons.onclick = () => switchTab('lessons');
+    const tabDictionary = document.getElementById('tab-dictionary');
+    if (tabDictionary) tabDictionary.onclick = () => switchTab('dictionary');
+    const tabChat = document.getElementById('tab-chat');
+    if (tabChat) tabChat.onclick = () => switchTab('chat');
+    const tabPrivateChat = document.getElementById('tab-private-chat');
+    if (tabPrivateChat) tabPrivateChat.onclick = () => switchTab('private-chat');
+    const tabLive = document.getElementById('tab-live');
+    if (tabLive) tabLive.onclick = () => switchTab('live');
+
+    const addWordForm = document.getElementById('add-word-form');
+    if (addWordForm) {
+        addWordForm.onsubmit = (e) => {
+            e.preventDefault();
+            const en = document.getElementById('word-en').value.trim();
+            const es = document.getElementById('word-es').value.trim();
+            if (!en || !es) return;
+            if (!currentUser.customWords) currentUser.customWords = [];
+            currentUser.customWords.push({ id: Date.now(), en, es });
             saveCurrentUserData();
-            showMainApp();
-            showToast('🎉 Cuenta creada exitosamente.');
-        } else {
-            if (!data[email]) {
-                showToast('❌ Esta cuenta no existe. Haz clic en "Crear Cuenta" para registrarte.', 'info');
-                return;
+            renderCustomWords();
+            document.getElementById('word-en').value = '';
+            document.getElementById('word-es').value = '';
+            showToast('¡Frase guardada!');
+        };
+    }
+
+    const btnCloseLesson = document.getElementById('btn-close-lesson');
+    if (btnCloseLesson) btnCloseLesson.onclick = () => document.getElementById('view-lesson-modal').classList.add('hidden');
+    
+    const btnNextStep = document.getElementById('btn-next-step');
+    if (btnNextStep) {
+        btnNextStep.onclick = () => {
+            if (currentStepIndex < currentLesson.items.length - 1) {
+                currentStepIndex++;
+                renderCurrentStep();
+            } else {
+                currentUser.xp = (currentUser.xp || 0) + 25;
+                saveCurrentUserData();
+                updateUI();
+                showToast('🎉 ¡Lección completada! +25 XP');
+                document.getElementById('view-lesson-modal').classList.add('hidden');
             }
-            if (data[email].password !== password) {
-                showToast('❌ Contraseña incorrecta.', 'info');
-                return;
-            }
-            currentUser = data[email];
-            if (!currentUser.seenHistory) currentUser.seenHistory = [];
-            if (!currentUser.privateContacts) currentUser.privateContacts = [];
-            saveCurrentUserData();
-            showMainApp();
-            showToast(`¡Bienvenido de nuevo, ${currentUser.name}!`);
-        }
-    };
-
-    document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('meyer_app_active_email'); showAuthModal(); };
-    document.getElementById('tab-lessons').onclick = () => switchTab('lessons');
-    document.getElementById('tab-dictionary').onclick = () => switchTab('dictionary');
-    document.getElementById('tab-chat').onclick = () => switchTab('chat');
-    document.getElementById('tab-private-chat').onclick = () => switchTab('private-chat');
-    document.getElementById('tab-live').onclick = () => switchTab('live');
-
-    document.getElementById('add-word-form').onsubmit = (e) => {
-        e.preventDefault();
-        const en = document.getElementById('word-en').value.trim();
-        const es = document.getElementById('word-es').value.trim();
-        if (!en || !es) return;
-        if (!currentUser.customWords) currentUser.customWords = [];
-        currentUser.customWords.push({ id: Date.now(), en, es });
-        saveCurrentUserData();
-        renderCustomWords();
-        document.getElementById('word-en').value = '';
-        document.getElementById('word-es').value = '';
-        showToast('¡Frase guardada!');
-    };
-
-    document.getElementById('btn-close-lesson').onclick = () => document.getElementById('view-lesson-modal').classList.add('hidden');
-    document.getElementById('btn-next-step').onclick = () => {
-        if (currentStepIndex < currentLesson.items.length - 1) {
-            currentStepIndex++;
-            renderCurrentStep();
-        } else {
-            currentUser.xp = (currentUser.xp || 0) + 25;
-            saveCurrentUserData();
-            updateUI();
-            showToast('🎉 ¡Lección completada! +25 XP');
-            document.getElementById('view-lesson-modal').classList.add('hidden');
-        }
-    };
+        };
+    }
 });
 
 function switchTab(tab) {
-    ['lessons', 'dictionary', 'chat', 'private-chat', 'live'].forEach(t => {
-        document.getElementById(`sec-${t}`).classList.toggle('hidden', t !== tab);
-        document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    const sections = ['lessons', 'dictionary', 'chat', 'private-chat', 'live'];
+    sections.forEach(t => {
+        const sec = document.getElementById(`sec-${t}`);
+        if (sec) sec.classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if (btn) {
+            if (t === tab) btn.classList.add('active', 'text-indigo-600', 'dark:text-indigo-400');
+            else btn.classList.remove('active', 'text-indigo-600', 'dark:text-indigo-400');
+        }
     });
 }
