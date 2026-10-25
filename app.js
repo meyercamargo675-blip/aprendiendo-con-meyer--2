@@ -534,7 +534,6 @@ function renderSavedPrivateContactsList() {
         const contactEmail = typeof contact === 'string' ? contact.toLowerCase() : contact.email.toLowerCase();
         const contactName = typeof contact === 'string' ? contact : (contact.name || contact.email);
 
-        // Clave única del chat usando ambos correos ordenados alfabéticamente
         const chatId = [myEmail, contactEmail].sort().join('_').replace(/[^a-zA-Z0-9]/g, '_');
 
         const item = document.createElement('div');
@@ -568,7 +567,6 @@ function openPrivateChat(chatId, targetName) {
     if (privateUnsubscribe) privateUnsubscribe();
 
     if (db) {
-        // Consulta segura al ID del chat generado con los correos electrónicos
         privateUnsubscribe = db.collection('privateChats').doc(chatId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
