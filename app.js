@@ -104,39 +104,39 @@ const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Plátano / Banano" en inglés?', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300', options: ['Banana', 'Lemon', 'Orange', 'Mango'], correct: 0 },
     { q: '¿Cómo se dice "Naranja" en inglés?', img: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=300', options: ['Apple', 'Orange', 'Peach', 'Pear'], correct: 1 },
     { q: '¿Cómo se dice "Pan" en inglés?', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300', options: ['Bread', 'Cake', 'Cookie', 'Rice'], correct: 0 },
-    { q: '¿Cómo se dice "Leche" en inglés?', img: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300', options: ['Water', 'Milk', 'Juice', 'Wine'], correct: 1 },
-    { q: '¿Cómo se dice "Queso" en inglés?', img: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?w=300', options: ['Cheese', 'Butter', 'Cream', 'Milk'], correct: 0 },
-    { q: '¿Cómo se dice "Huevo" en inglés?', img: 'https://images.unsplash.com/photo-1516448357494-2257d0d3cf16?w=300', options: ['Meat', 'Egg', 'Fish', 'Chicken'], correct: 1 },
-    { q: '¿Cómo se dice "Carne" en inglés?', img: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=300', options: ['Meat', 'Fish', 'Rice', 'Soup'], correct: 0 },
-    { q: '¿Cómo se dice "Sopa" en inglés?', img: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=300', options: ['Salad', 'Soup', 'Water', 'Tea'], correct: 1 },
-    { q: '¿Cómo se dice "Ensalada" en inglés?', img: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300', options: ['Salad', 'Soup', 'Rice', 'Pasta'], correct: 0 },
-    { q: '¿Cómo se dice "Pastel / Torta" en inglés?', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300', options: ['Bread', 'Cake', 'Cookie', 'Pie'], correct: 1 },
-    { q: '¿Cómo se dice "Camisa" en inglés?', img: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=300', options: ['Shirt', 'Pants', 'Hat', 'Shoe'], correct: 0 },
-    { q: '¿Cómo se dice "Pantalón" en inglés?', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300', options: ['Shirt', 'Pants', 'Socks', 'Jacket'], correct: 1 },
-    { q: '¿Cómo se dice "Chaqueta / Abrigo" en inglés?', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300', options: ['Jacket', 'Shirt', 'Hat', 'Scarf'], correct: 0 },
-    { q: '¿Cómo se dice "Sombrero / Gorra" en inglés?', img: 'https://images.unsplash.com/photo-1533827432537-70133748f5c8?w=300', options: ['Glasses', 'Hat', 'Mask', 'Scarf'], correct: 1 },
-    { q: '¿Cómo se dice "Escuela" en inglés?', img: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=300', options: ['School', 'Hospital', 'Bank', 'Park'], correct: 0 },
-    { q: '¿Cómo se dice "Hospital" en inglés?', img: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=300', options: ['School', 'Hospital', 'Hotel', 'Store'], correct: 1 },
-    { q: '¿Cómo se dice "Hotel" en inglés?', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300', options: ['Hotel', 'House', 'Apartment', 'Store'], correct: 0 },
-    { q: '¿Cómo se dice "Tienda / Mercado" en inglés?', img: 'https://images.unsplash.com/photo-1534723453664-68e0fc0c526d?w=300', options: ['Bank', 'Store', 'School', 'Office'], correct: 1 },
-    { q: '¿Cómo se dice "Dinero" en inglés?', img: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=300', options: ['Money', 'Card', 'Gold', 'Paper'], correct: 0 },
-    { q: '¿Cómo se dice "Llave" en inglés?', img: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=300', options: ['Lock', 'Key', 'Door', 'Chain'], correct: 1 },
-    { q: '¿Cómo se dice "Caja / Box" en inglés?', img: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=300', options: ['Box', 'Bag', 'Case', 'Pack'], correct: 0 },
-    { q: '¿Cómo se dice "Bolsa" en inglés?', img: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=300', options: ['Box', 'Bag', 'Pocket', 'Wallet'], correct: 1 },
-    { q: '¿Cómo se dice "Fuego / Llama" en inglés?', img: 'https://images.unsplash.com/photo-1508873696983-2df5c920ac2c?w=300', options: ['Fire', 'Spark', 'Light', 'Heat'], correct: 0 },
-    { q: '¿Cómo se dice "Pintura / Arte" en inglés?', img: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300', options: ['Photo', 'Art', 'Paint', 'Color'], correct: 1 },
-    { q: '¿Cómo se dice "Película / Cine" en inglés?', img: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=300', options: ['Movie', 'Song', 'Book', 'Show'], correct: 0 },
-    { q: '¿Cómo se dice "Juego" en inglés?', img: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300', options: ['Sport', 'Game', 'Toy', 'Play'], correct: 1 },
-    { q: '¿Cómo se dice "Tren" en inglés?', img: 'https://images.unsplash.com/photo-1515165562839-978bbcfc9cc4?w=300', options: ['Train', 'Bus', 'Car', 'Plane'], correct: 0 },
-    { q: '¿Cómo se dice "Barco / Navío" en inglés?', img: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=300', options: ['Car', 'Ship', 'Boat', 'Plane'], correct: 1 },
-    { q: '¿Cómo se dice "Carretera / Calle" en inglés?', img: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=300', options: ['Road', 'Path', 'Street', 'Way'], correct: 0 },
-    { q: '¿Cómo se dice "Puente" en inglés?', img: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300', options: ['Tower', 'Bridge', 'Road', 'Tunnel'], correct: 1 },
-    { q: '¿Cómo se dice "Edificio" en inglés?', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300', options: ['Building', 'House', 'Office', 'Store'], correct: 0 },
-    { q: '¿Cómo se dice "Ciudad" en inglés?', img: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=300', options: ['Town', 'City', 'Village', 'Country'], correct: 1 },
-    { q: '¿Cómo se dice "País" en inglés?', img: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=300', options: ['Country', 'City', 'State', 'World'], correct: 0 },
-    { q: '¿Cómo se dice "Mundo" en inglés?', img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300', options: ['Earth', 'World', 'Space', 'Planet'], correct: 1 },
-    { q: '¿Cómo se dice "Cielo" en inglés?', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300', options: ['Sky', 'Cloud', 'Space', 'Sun'], correct: 0 },
-    { q: '¿Cómo se dice "Nube" en inglés?', img: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=300', options: ['Sun', 'Cloud', 'Rain', 'Wind'], correct: 1 }
+    { type: 'card', en: 'Milk', es: 'Leche', phonetic: 'Milk', category: 'Básico' },
+    { type: 'card', en: 'Cheese', es: 'Queso', phonetic: 'Chis', category: 'Básico' },
+    { type: 'card', en: 'Egg', es: 'Huevo', phonetic: 'Eg', category: 'Básico' },
+    { type: 'card', en: 'Meat', es: 'Carne', phonetic: 'Mit', category: 'Básico' },
+    { type: 'card', en: 'Soup', es: 'Sopa', phonetic: 'Sup', category: 'Básico' },
+    { type: 'card', en: 'Salad', es: 'Ensalada', phonetic: 'Salad', category: 'Básico' },
+    { type: 'card', en: 'Cake', es: 'Pastel / Torta', phonetic: 'Keik', category: 'Básico' },
+    { type: 'card', en: 'Shirt', es: 'Camisa', phonetic: 'Shirt', category: 'Básico' },
+    { type: 'card', en: 'Pants', es: 'Pantalón', phonetic: 'Pants', category: 'Básico' },
+    { type: 'card', en: 'Jacket', es: 'Chaqueta', phonetic: 'Djakei', category: 'Básico' },
+    { type: 'card', en: 'Hat', es: 'Sombrero / Gorra', phonetic: 'Jat', category: 'Básico' },
+    { type: 'card', en: 'School', es: 'Escuela', phonetic: 'Sckul', category: 'Básico' },
+    { type: 'card', en: 'Hospital', es: 'Hospital', phonetic: 'Jospital', category: 'Básico' },
+    { type: 'card', en: 'Hotel', es: 'Hotel', phonetic: 'Jotel', category: 'Básico' },
+    { type: 'card', en: 'Store', es: 'Tienda / Mercado', phonetic: 'Stor', category: 'Básico' },
+    { type: 'card', en: 'Money', es: 'Dinero', phonetic: 'Manei', category: 'Básico' },
+    { type: 'card', en: 'Key', es: 'Llave', phonetic: 'Ki', category: 'Básico' },
+    { type: 'card', en: 'Box', es: 'Caja', phonetic: 'Box', category: 'Básico' },
+    { type: 'card', en: 'Bag', es: 'Bolsa', phonetic: 'Bag', category: 'Básico' },
+    { type: 'card', en: 'Fire', es: 'Fuego', phonetic: 'Faier', category: 'Básico' },
+    { type: 'card', en: 'Art', es: 'Arte', phonetic: 'Art', category: 'Básico' },
+    { type: 'card', en: 'Movie', es: 'Película', phonetic: 'Muvi', category: 'Básico' },
+    { type: 'card', en: 'Game', es: 'Juego', phonetic: 'Geim', category: 'Básico' },
+    { type: 'card', en: 'Train', es: 'Tren', phonetic: 'Trein', category: 'Básico' },
+    { type: 'card', en: 'Ship', es: 'Barco', phonetic: 'Ship', category: 'Básico' },
+    { type: 'card', en: 'Road', es: 'Carretera', phonetic: 'Roud', category: 'Básico' },
+    { type: 'card', en: 'Bridge', es: 'Puente', phonetic: 'Bridj', category: 'Básico' },
+    { type: 'card', en: 'Building', es: 'Edificio', phonetic: 'Bilding', category: 'Básico' },
+    { type: 'card', en: 'City', es: 'Ciudad', phonetic: 'Siti', category: 'Básico' },
+    { type: 'card', en: 'Country', es: 'País', phonetic: 'Cantri', category: 'Básico' },
+    { type: 'card', en: 'World', es: 'Mundo', phonetic: 'Uorld', category: 'Básico' },
+    { type: 'card', en: 'Sky', es: 'Cielo', phonetic: 'Scai', category: 'Básico' },
+    { type: 'card', en: 'Cloud', es: 'Nube', phonetic: 'Claud', category: 'Básico' }
 ];
 
 // ESTADO GLOBAL
@@ -152,6 +152,19 @@ let privateUnsubscribe = null;
 let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
 let facingMode = 'user';
+
+// ==========================================
+// FUNCIÓN CENTRALIZADA PARA GARANTIZAR ID ÚNICO Y BASADO EN EL NOMBRE REGISTRADO
+// ==========================================
+function ensureUserUniqueId(userObj) {
+    if (!userObj) return;
+    const cleanName = (userObj.name || 'USUARIO').trim().toUpperCase().replace(/\s+/g, '_');
+    
+    // Si no tiene ID o si su ID previo pertenecía a otro nombre/cargando, se genera uno limpio y exacto
+    if (!userObj.userId || userObj.userId.includes('Cargando') || !userObj.userId.startsWith(cleanName)) {
+        userObj.userId = `${cleanName}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    }
+}
 
 // ==========================================
 // MÓDULO DE BATALLA 1VS1 (SALA CON CONTRASEÑA / ALEATORIO SEGURO)
@@ -369,17 +382,18 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO CON SCROLL FLUIDO E ID GENERADO AL INSTANTE
+// MÓDULO DE CHAT PRIVADO
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
     if (!secPrivate) return;
 
-    // Asegurar que si el ID no existe por alguna razón antigua, se cree inmediatamente con su nombre
-    if (currentUser && !currentUser.userId) {
-        currentUser.userId = (currentUser.name || 'MEYER').toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    if (currentUser) {
+        ensureUserUniqueId(currentUser);
         saveCurrentUserData();
     }
+
+    const currentUserIdDisplay = currentUser && currentUser.userId ? currentUser.userId : 'CARGANDO_ID';
 
     secPrivate.innerHTML = `
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid lg:grid-cols-3 gap-4 p-4 h-[520px]">
@@ -398,9 +412,12 @@ function renderPrivateChat() {
             </div>
 
             <div class="lg:col-span-2 flex flex-col h-full bg-slate-900/40 rounded-2xl p-3 border border-slate-700">
-                <div class="p-2 border-b border-slate-700 font-bold text-xs text-white flex justify-between items-center">
+                <div class="p-2 border-b border-slate-700 font-bold text-xs text-white flex justify-between items-center flex-wrap gap-2">
                     <span id="private-chat-header">💬 Selecciona un chat privado</span>
-                    <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Tu ID: ${currentUser ? currentUser.userId : 'Cargando...'}</span>
+                    <div class="flex items-center space-x-2 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                        <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Tu ID: ${currentUserIdDisplay}</span>
+                        <button onclick="copyMyUserId('${currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition" title="Copiar ID"><i class="fa-solid fa-copy"></i></button>
+                    </div>
                 </div>
 
                 <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-3 my-2 max-h-[360px] min-h-[250px]">
@@ -417,6 +434,15 @@ function renderPrivateChat() {
     `;
     renderSavedPrivateContactsList();
 }
+
+window.copyMyUserId = function(idText) {
+    const cleanId = idText.replace('Tu ID: ', '').trim();
+    navigator.clipboard.writeText(cleanId).then(() => {
+        showToast('📋 ¡ID copiado al portapapeles!');
+    }).catch(() => {
+        showToast('No se pudo copiar automáticamente.', 'error');
+    });
+};
 
 window.sendFriendRequest = function() {
     const input = document.getElementById('private-target-email');
@@ -454,6 +480,7 @@ function renderSavedPrivateContactsList() {
 }
 
 window.openPrivateChat = function(friendId) {
+    if (!currentUser || !currentUser.userId) return;
     activePrivateChatId = [currentUser.userId, friendId].sort().join('_');
     document.getElementById('private-chat-header').innerText = `Chat Privado con: ${friendId}`;
     document.getElementById('private-input-text').disabled = false;
@@ -507,7 +534,7 @@ window.openPrivateChat = function(friendId) {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (BOTONES FIJOS Y CONEXIÓN DE CÁMARA CORREGIDA)
+// TRANSMISIONES EN VIVO (GLOBAL Y OPTIMIZADA PARA MÓVILES)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -518,7 +545,7 @@ function renderLiveStream() {
             <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
                 <div class="flex items-center space-x-2">
                     <span class="w-3 h-3 bg-rose-500 rounded-full animate-ping"></span>
-                    <h3 class="text-lg font-black">Transmisiones en Vivo 🔴</h3>
+                    <h3 class="text-lg font-black">Transmisiones en Vivo 🔴 (Mundial y Celulares)</h3>
                 </div>
                 <div class="flex space-x-2 flex-wrap gap-2">
                     <button id="btn-random-live" onclick="joinRandomLiveRoom()" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-bold text-xs rounded-xl transition shadow-md flex items-center space-x-1">
@@ -534,7 +561,7 @@ function renderLiveStream() {
             </div>
 
             <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Transmisiones Activas:</span>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Transmisiones Activas en la Nube:</span>
                 <div id="live-rooms-list" class="flex flex-wrap gap-2">
                     <span class="text-xs text-slate-500 italic">No hay transmisiones en vivo activas.</span>
                 </div>
@@ -546,11 +573,10 @@ function renderLiveStream() {
                         SIN TRANSMISIÓN SELECCIONADA
                     </span>
                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 h-[320px]">
-                        <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover rounded-xl"></video>
-                        <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
+                        <video id="live-video-player" autoplay playsinline webkit-playsinline class="w-full h-full object-cover rounded-xl bg-black"></video>
+                        <video id="live-guest-player" autoplay playsinline webkit-playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
 
-                    <!-- BOTONES FIJOS QUE NUNCA DESAPARECEN -->
                     <div class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2 flex-wrap gap-1">
                         <button type="button" onclick="toggleDuoMute()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
@@ -590,19 +616,44 @@ window.toggleHostingLive = async function() {
 
     const btn = document.getElementById('btn-toggle-live');
     const btnDuo = document.getElementById('btn-invite-duo');
-    const myName = currentUser ? currentUser.name : 'Meyer';
-    const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
+    const myName = currentUser ? currentUser.name : 'Usuario';
+    const cleanName = myName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const myRoomId = `live_${cleanName}_${Math.floor(Math.random() * 1000)}`;
 
     try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
+        const constraints = {
+            video: {
+                facingMode: facingMode,
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 24 }
+            },
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        };
+
+        localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
         const mainPlayer = document.getElementById('live-video-player');
         if (mainPlayer) { 
             mainPlayer.srcObject = localMediaStream; 
             mainPlayer.muted = true; 
+            mainPlayer.play().catch(() => {});
         }
 
         if (window.Peer) {
-            peer = new Peer();
+            peer = new Peer({
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ]
+                }
+            });
+
             peer.on('open', (peerId) => {
                 if (db) {
                     db.collection('liveRooms').doc(myRoomId).set({
@@ -623,7 +674,12 @@ window.toggleHostingLive = async function() {
                     badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
                 }
                 connectToLiveChat(myRoomId, myName);
-                showToast('🚀 Tu transmisión en vivo ha comenzado.');
+                showToast('🚀 Transmisión global iniciada exitosamente.');
+            });
+
+            peer.on('error', (err) => {
+                console.error("Peer error:", err);
+                showToast('Error en la conexión global de video.', 'error');
             });
 
             peer.on('call', (call) => {
@@ -633,12 +689,14 @@ window.toggleHostingLive = async function() {
                     if (guestPlayer) {
                         guestPlayer.srcObject = remoteStream;
                         guestPlayer.classList.remove('hidden');
+                        guestPlayer.play().catch(() => {});
                     }
                 });
             });
         }
     } catch (e) {
-        showToast('Error de acceso a cámara o micrófono.', 'error');
+        console.error("Media error:", e);
+        showToast('Permiso de cámara/micrófono denegado o no disponible en este dispositivo.', 'error');
     }
 };
 
@@ -648,7 +706,7 @@ window.stopLiveHostingSafely = function() {
         localMediaStream = null;
     }
     const mainPlayer = document.getElementById('live-video-player');
-    if (mainPlayer) mainPlayer.srcObject = null;
+    if (mainPlayer) { mainPlayer.srcObject = null; }
     
     const guestPlayer = document.getElementById('live-guest-player');
     if (guestPlayer) {
@@ -658,10 +716,8 @@ window.stopLiveHostingSafely = function() {
 
     if (peer) { peer.destroy(); peer = null; }
 
-    if (db && currentUser) {
-        const myName = currentUser.name || 'Meyer';
-        const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
-        db.collection('liveRooms').doc(myRoomId).delete().catch(() => {});
+    if (db && activeLiveRoomId) {
+        db.collection('liveRooms').doc(activeLiveRoomId).delete().catch(() => {});
     }
 
     const btn = document.getElementById('btn-toggle-live');
@@ -679,7 +735,7 @@ window.stopLiveHostingSafely = function() {
     }
 
     activeLiveRoomId = null;
-    showToast('⏹️ Transmisión finalizada y apagada.', 'info');
+    showToast('⏹️ Transmisión finalizada.', 'info');
 };
 
 window.toggleDuoMute = function() {
@@ -710,22 +766,26 @@ window.toggleFlipCamera = async function() {
     facingMode = facingMode === 'user' ? 'environment' : 'user';
     if (localMediaStream) localMediaStream.getTracks().forEach(track => track.stop());
     try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
+        localMediaStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, 
+            audio: true 
+        });
         const mainPlayer = document.getElementById('live-video-player');
         if (mainPlayer) {
             mainPlayer.srcObject = localMediaStream;
             mainPlayer.muted = true;
+            mainPlayer.play().catch(() => {});
         }
-        showToast('📷 Cámara volteada.');
+        showToast('📷 Cámara volteada correctamente.');
     } catch (e) {
-        showToast('No se pudo voltear la cámara.', 'error');
+        showToast('No se pudo voltear la cámara en este dispositivo.', 'error');
     }
 };
 
 window.inviteFriendToDuo = function() {
-    const friendId = prompt("Ingresa el ID de tu amigo para invitarlo al Dúo:");
+    const friendId = prompt("Ingresa el ID exacto de tu amigo para invitarlo a transmitir en Dúo:");
     if (!friendId) return;
-    const myName = currentUser ? currentUser.name : 'Meyer';
+    const myName = currentUser ? currentUser.name : 'Usuario';
     if (db && peer) {
         db.collection('duoInvitations').doc(friendId.trim()).set({
             hostName: myName, hostPeerId: peer.id,
@@ -754,14 +814,18 @@ async function connectToHostDuo(hostPeerId, hostName) {
     try {
         localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
         if (window.Peer) {
-            const duoPeer = new Peer();
+            const duoPeer = new Peer({
+                config: {
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                }
+            });
             duoPeer.on('open', () => {
                 const call = duoPeer.call(hostPeerId, localMediaStream);
                 call.on('stream', (hostStream) => {
                     const mainPlayer = document.getElementById('live-video-player');
                     const guestPlayer = document.getElementById('live-guest-player');
-                    if (mainPlayer) { mainPlayer.srcObject = hostStream; mainPlayer.muted = false; }
-                    if (guestPlayer) { guestPlayer.srcObject = localMediaStream; guestPlayer.classList.remove('hidden'); }
+                    if (mainPlayer) { mainPlayer.srcObject = hostStream; mainPlayer.muted = false; mainPlayer.play().catch(() => {}); }
+                    if (guestPlayer) { guestPlayer.srcObject = localMediaStream; guestPlayer.classList.remove('hidden'); guestPlayer.play().catch(() => {}); }
                     showToast(`🔴 En Dúo con ${hostName}`);
                 });
             });
@@ -783,21 +847,17 @@ function listenToActiveLiveRooms() {
         let html = '';
         snapshot.forEach(doc => {
             const room = doc.data();
-            html += `<button onclick="watchLiveRoom('${room.peerId}', '${room.hostName}', '${room.roomId}')" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold">🔴 Live de ${room.hostName}</button>`;
+            html += `<button onclick="watchLiveRoom('${room.peerId}', '${room.hostName}', '${room.roomId}')" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold shadow hover:bg-rose-600 hover:text-white transition">🔴 Live de ${room.hostName}</button>`;
         });
         container.innerHTML = html;
     });
 }
 
 window.joinRandomLiveRoom = function() {
-    if (!localMediaStream) {
-        showToast('⚠️ Debes encender tu transmisión en vivo primero para usar el emparejamiento aleatorio.', 'info');
-        return;
-    }
     if (!db) return;
     db.collection('liveRooms').get().then(snapshot => {
         if (snapshot.empty) {
-            showToast('No hay transmisiones aleatorias disponibles.', 'info');
+            showToast('No hay transmisiones en vivo disponibles en este momento.', 'info');
             return;
         }
         const rooms = [];
@@ -819,7 +879,14 @@ window.joinRandomLiveRoom = function() {
 
 window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (window.Peer) {
-        const viewerPeer = new Peer();
+        const viewerPeer = new Peer({
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
+        });
         viewerPeer.on('open', () => {
             const emptyStream = new MediaStream();
             const call = viewerPeer.call(peerId, localMediaStream || emptyStream);
@@ -828,13 +895,17 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
                 if (player) { 
                     player.srcObject = remoteStream; 
                     player.muted = false; 
+                    player.play().catch(() => {});
                 }
                 const badge = document.getElementById('live-status-badge');
                 if (badge) {
                     badge.innerText = `🔴 EN VIVO (${hostName})`;
                     badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
                 }
-                showToast(`📺 Conectado al Live de ${hostName}`);
+                showToast(`📺 Conectado al Live mundial de ${hostName}`);
+            });
+            call.on('error', () => {
+                showToast('No se pudo conectar a la transmisión de este usuario.', 'error');
             });
         });
     }
@@ -843,9 +914,12 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
 };
 
 function connectToLiveChat(roomId, hostName) {
-    document.getElementById('live-chat-header').innerText = `💬 Chat: Live de ${hostName}`;
-    document.getElementById('live-chat-input').disabled = false;
-    document.getElementById('live-chat-btn').disabled = false;
+    const header = document.getElementById('live-chat-header');
+    const input = document.getElementById('live-chat-input');
+    const btn = document.getElementById('live-chat-btn');
+    if (header) header.innerText = `💬 Chat: Live de ${hostName}`;
+    if (input) input.disabled = false;
+    if (btn) btn.disabled = false;
 
     if (liveChatUnsubscribe) liveChatUnsubscribe();
     if (db) {
@@ -861,16 +935,19 @@ function connectToLiveChat(roomId, hostName) {
             });
     }
 
-    document.getElementById('live-chat-form').onsubmit = (e) => {
-        e.preventDefault();
-        const input = document.getElementById('live-chat-input');
-        const text = input.value.trim();
-        if (!text || !activeLiveRoomId) return;
-        db.collection('liveRooms').doc(activeLiveRoomId).collection('comments').add({
-            sender: currentUser ? currentUser.name : 'Usuario',
-            text, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => { input.value = ''; });
-    };
+    const chatForm = document.getElementById('live-chat-form');
+    if (chatForm) {
+        chatForm.onsubmit = (e) => {
+            e.preventDefault();
+            const txtInput = document.getElementById('live-chat-input');
+            const text = txtInput ? txtInput.value.trim() : '';
+            if (!text || !activeLiveRoomId) return;
+            db.collection('liveRooms').doc(activeLiveRoomId).collection('comments').add({
+                sender: currentUser ? currentUser.name : 'Usuario',
+                text, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => { if (txtInput) txtInput.value = ''; });
+        };
+    }
 }
 
 // ==========================================
@@ -918,10 +995,8 @@ function initAuth() {
     const data = getUsersDB();
     if (activeEmail && data[activeEmail]) {
         currentUser = data[activeEmail];
-        if (!currentUser.userId) {
-            currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
-            saveCurrentUserData();
-        }
+        ensureUserUniqueId(currentUser);
+        saveCurrentUserData();
         showMainApp();
     } else { showAuthModal(); }
 }
@@ -945,6 +1020,11 @@ function showMainApp() {
 
 function updateUI() {
     if (!currentUser) return;
+
+    // Asignación limpia e inmutable de ID único basado en el nombre registrado
+    ensureUserUniqueId(currentUser);
+    saveCurrentUserData();
+
     const welcomeHeader = document.getElementById('header-user-welcome');
     const welcomeTitle = document.getElementById('welcome-title');
     const xpCount = document.getElementById('xp-count');
@@ -954,6 +1034,15 @@ function updateUI() {
     if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name}! Sistema Completo Listo`;
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
+
+    // Actualización global sincronizada de la tarjeta superior e inferior con el MISMO ID exacto
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while (node = walker.nextNode()) {
+        if (node.nodeValue && node.nodeValue.includes('Mi ID:')) {
+            node.nodeValue = `Mi ID: ${currentUser.userId}`;
+        }
+    }
 
     renderLessons();
     renderCustomWords();
@@ -1125,7 +1214,7 @@ function renderGlobalChat() {
         if (!text) return;
         if (db) {
             db.collection('globalChat').add({
-                sender: currentUser ? currentUser.name : 'Meyer',
+                sender: currentUser ? currentUser.name : 'Usuario',
                 text, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => { input.value = ''; });
         }
@@ -1181,14 +1270,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = getUsersDB();
 
             if (isRegistering) {
-                const name = nameInput ? nameInput.value.trim() : 'Meyer';
+                const name = nameInput ? nameInput.value.trim() : '';
                 if (!name) { showToast('Ingresa tu nombre.', 'error'); return; }
-                const userId = name.toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
 
                 currentUser = { 
-                    email, password, name, userId, xp: 50, streak: 1, 
+                    email, password, name, xp: 50, streak: 1, 
                     customWords: [], seenHistory: [], friends: [] 
                 };
+                ensureUserUniqueId(currentUser);
                 data[email] = currentUser;
                 saveUsersDB(data);
                 saveCurrentUserData();
@@ -1196,13 +1285,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 showMainApp();
             } else {
                 if (!data[email] || data[email].password !== password) {
-                    showToast('❌ Error: Cuenta no registrada o contraseña incorrecta. Regístrate primero.', 'error');
+                    showToast('❌ Error: Cuenta no registrada o contraseña incorrecta.', 'error');
                     return;
                 }
                 currentUser = data[email];
-                if (!currentUser.userId) {
-                    currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
-                }
+                ensureUserUniqueId(currentUser);
                 saveCurrentUserData();
                 showMainApp();
             }
