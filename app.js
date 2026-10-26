@@ -159,8 +159,6 @@ let facingMode = 'user';
 function ensureUserUniqueId(userObj) {
     if (!userObj) return;
     const cleanName = (userObj.name || 'USUARIO').trim().toUpperCase().replace(/\s+/g, '_');
-    
-    // Si no tiene ID o si su ID previo pertenecía a otro nombre/cargando, se genera uno limpio y exacto
     if (!userObj.userId || userObj.userId.includes('Cargando') || !userObj.userId.startsWith(cleanName)) {
         userObj.userId = `${cleanName}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     }
@@ -382,7 +380,7 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO
+// MÓDULO DE CHAT PRIVADO (DISEÑO MODERNO CON TARJETA DE BÚSQUEDA Y ACCIONES EXTRA)
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
@@ -396,47 +394,154 @@ function renderPrivateChat() {
     const currentUserIdDisplay = currentUser && currentUser.userId ? currentUser.userId : 'CARGANDO_ID';
 
     secPrivate.innerHTML = `
-        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid lg:grid-cols-3 gap-4 p-4 h-[520px]">
-            <div class="border-r border-slate-200 dark:border-slate-700 pr-2 space-y-3 flex flex-col h-full overflow-hidden">
-                <div>
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Añadir Amigo por ID</h4>
-                    <div class="space-y-2">
-                        <input type="text" id="private-target-email" placeholder="ID de tu amigo" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none">
-                        <button onclick="sendFriendRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">Agregar Amigo</button>
+        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-[550px]">
+            <!-- Columna Izquierda: Búsqueda Interactiva, Agregar y Lista de Amigos -->
+            <div id="private-sidebar-panel" class="lg:block border-r border-slate-200 dark:border-slate-700 pr-2 space-y-3 flex flex-col h-full overflow-hidden">
+                <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-700/50 space-y-2">
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-400">Buscar / Añadir por ID</h4>
+                    <div class="flex gap-2">
+                        <input type="text" id="private-target-email" placeholder="Ej. CARLOS_9X1P" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-indigo-500 font-mono">
+                        <button onclick="searchAndVerifyFriendId()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shrink-0">Buscar</button>
                     </div>
+                    <!-- Tarjeta de resultado de búsqueda interactiva -->
+                    <div id="search-friend-result-card" class="hidden pt-2 border-t border-slate-800 mt-2 space-y-2"></div>
                 </div>
+
                 <div class="flex-1 overflow-y-auto space-y-1">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mt-2 mb-1">Mis Conversaciones</h4>
-                    <div id="private-chats-list" class="space-y-1"></div>
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mt-2 mb-1 px-1">Mis Conversaciones</h4>
+                    <div id="private-chats-list" class="space-y-1.5"></div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 flex flex-col h-full bg-slate-900/40 rounded-2xl p-3 border border-slate-700">
-                <div class="p-2 border-b border-slate-700 font-bold text-xs text-white flex justify-between items-center flex-wrap gap-2">
-                    <span id="private-chat-header">💬 Selecciona un chat privado</span>
-                    <div class="flex items-center space-x-2 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                        <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Tu ID: ${currentUserIdDisplay}</span>
-                        <button onclick="copyMyUserId('${currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition" title="Copiar ID"><i class="fa-solid fa-copy"></i></button>
+            <!-- Columna Derecha: Ventana de Chat Activa con Opciones Modernas -->
+            <div id="private-chatbox-panel" class="lg:col-span-2 flex flex-col h-[500px] lg:h-full bg-slate-900/50 rounded-2xl p-3 border border-slate-700 relative">
+                <!-- Botón de regreso para celulares -->
+                <div class="lg:hidden pb-2 mb-1 border-b border-slate-800 flex items-center justify-between">
+                    <button onclick="backToPrivateContacts()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl font-bold flex items-center space-x-1">
+                        <i class="fa-solid fa-arrow-left"></i><span>Volver a Amigos</span>
+                    </button>
+                    <span class="text-[10px] text-emerald-400 font-bold" id="mobile-chat-status">🟢 Conectado</span>
+                </div>
+
+                <div class="p-2 border-b border-slate-700/80 font-bold text-xs text-white flex justify-between items-center flex-wrap gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span id="private-chat-header" class="truncate max-w-[180px] sm:max-w-xs">💬 Selecciona un chat privado</span>
+                        <span id="chat-active-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="En línea"></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- Botón de funciones extra (Limpiar chat / Info) -->
+                        <div id="chat-extra-actions" class="hidden flex items-center space-x-1">
+                            <button onclick="clearCurrentPrivateChatHistory()" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition" title="Limpiar mensajes"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                        <div class="flex items-center space-x-2 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+                            <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Mi ID: ${currentUserIdDisplay}</span>
+                            <button onclick="copyMyUserId('${currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition px-1" title="Copiar ID"><i class="fa-solid fa-copy"></i></button>
+                        </div>
                     </div>
                 </div>
 
-                <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-3 my-2 max-h-[360px] min-h-[250px]">
-                    <p class="text-xs text-center text-slate-400 mt-10">Elige un contacto para comenzar a chatear sin interrupciones.</p>
+                <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-3 my-2 min-h-[250px]">
+                    <div class="text-center text-slate-400 mt-20 space-y-2">
+                        <div class="text-3xl">💬</div>
+                        <p class="text-xs">Busca un ID arriba o elige un contacto para chatear en tiempo real.</p>
+                    </div>
                 </div>
 
-                <form id="private-send-form" class="pt-2 border-t border-slate-700 flex space-x-2 mt-auto">
+                <form id="private-send-form" class="pt-2 border-t border-slate-700/80 flex space-x-2 mt-auto">
                     <input type="text" id="private-input-text" placeholder="Escribe un mensaje..." required disabled class="flex-1 px-3 py-2.5 rounded-xl bg-slate-900 text-xs text-white outline-none border border-slate-700 disabled:opacity-50">
-                    <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('private-input-text').value = txt, 'es-ES')" class="bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs hover:bg-slate-700 transition"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="submit" id="private-send-btn" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs disabled:opacity-50 transition">Enviar</button>
+                    <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('private-input-text').value = txt, 'es-ES')" class="bg-slate-800 text-white px-3.5 py-2.5 rounded-xl text-xs hover:bg-slate-700 transition" title="Dictar por voz"><i class="fa-solid fa-microphone"></i></button>
+                    <button type="submit" id="private-send-btn" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs disabled:opacity-50 transition shadow">Enviar</button>
                 </form>
             </div>
         </div>
     `;
     renderSavedPrivateContactsList();
+
+    if (window.innerWidth < 1024) {
+        toggleMobilePrivateView('list');
+    }
 }
 
+// Nueva función interactiva para buscar ID, mostrar tarjeta y dar opción de agregar o chatear
+window.searchAndVerifyFriendId = function() {
+    const input = document.getElementById('private-target-email');
+    const resultCard = document.getElementById('search-friend-result-card');
+    const targetId = input ? input.value.trim().toUpperCase() : '';
+
+    if (!targetId) {
+        showToast('Ingresa un ID para buscar.', 'info');
+        if (resultCard) resultCard.classList.add('hidden');
+        return;
+    }
+
+    if (currentUser.userId === targetId) {
+        showToast('Ese es tu propio ID.', 'info');
+        if (resultCard) resultCard.classList.add('hidden');
+        return;
+    }
+
+    // Mostrar tarjeta de resultado interactiva con las funciones pedidas
+    if (resultCard) {
+        resultCard.classList.remove('hidden');
+        resultCard.innerHTML = `
+            <div class="p-3 bg-slate-950 rounded-xl border border-indigo-500/40 flex items-center justify-between gap-2 shadow-md">
+                <div class="flex items-center space-x-2 truncate">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div class="truncate">
+                        <p class="text-xs font-bold text-white font-mono truncate">${targetId}</p>
+                        <p class="text-[10px] text-emerald-400">ID Válido encontrado</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <button onclick="addFoundFriend('${targetId}')" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg transition shadow">Agregar</button>
+                    <button onclick="openPrivateChat('${targetId}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-lg transition shadow">Chatear</button>
+                </div>
+            </div>
+        `;
+    }
+    showToast(`🔍 ID ${targetId} localizado correctamente.`);
+};
+
+window.addFoundFriend = function(targetId) {
+    if (!currentUser.friends) currentUser.friends = [];
+    if (!currentUser.friends.includes(targetId)) {
+        currentUser.friends.push(targetId);
+        saveCurrentUserData();
+        renderSavedPrivateContactsList();
+        showToast(`✅ Amigo ${targetId} agregado a tu lista.`);
+    } else {
+        showToast('Este amigo ya se encuentra en tu lista.', 'info');
+    }
+    const resultCard = document.getElementById('search-friend-result-card');
+    if (resultCard) resultCard.classList.add('hidden');
+    const input = document.getElementById('private-target-email');
+    if (input) input.value = '';
+    openPrivateChat(targetId);
+};
+
+window.toggleMobilePrivateView = function(view) {
+    if (window.innerWidth >= 1024) return;
+    const sidebar = document.getElementById('private-sidebar-panel');
+    const chatbox = document.getElementById('private-chatbox-panel');
+    if (!sidebar || !chatbox) return;
+
+    if (view === 'list') {
+        sidebar.classList.remove('hidden');
+        chatbox.classList.add('hidden');
+    } else {
+        sidebar.classList.add('hidden');
+        chatbox.classList.remove('hidden');
+    }
+};
+
+window.backToPrivateContacts = function() {
+    toggleMobilePrivateView('list');
+};
+
 window.copyMyUserId = function(idText) {
-    const cleanId = idText.replace('Tu ID: ', '').trim();
+    const cleanId = idText.replace('Tu ID: ', '').replace('Mi ID: ', '').trim();
     navigator.clipboard.writeText(cleanId).then(() => {
         showToast('📋 ¡ID copiado al portapapeles!');
     }).catch(() => {
@@ -445,20 +550,7 @@ window.copyMyUserId = function(idText) {
 };
 
 window.sendFriendRequest = function() {
-    const input = document.getElementById('private-target-email');
-    const targetId = input ? input.value.trim() : '';
-    if (!targetId) { showToast('Ingresa un ID válido.', 'info'); return; }
-
-    if (!currentUser.friends) currentUser.friends = [];
-    if (!currentUser.friends.includes(targetId)) {
-        currentUser.friends.push(targetId);
-        saveCurrentUserData();
-        renderSavedPrivateContactsList();
-        showToast('✅ Amigo añadido correctamente.');
-        input.value = '';
-    } else {
-        showToast('Este amigo ya está en tu lista.', 'info');
-    }
+    searchAndVerifyFriendId();
 };
 
 function renderSavedPrivateContactsList() {
@@ -467,24 +559,42 @@ function renderSavedPrivateContactsList() {
     const friends = currentUser.friends || [];
 
     if (friends.length === 0) {
-        container.innerHTML = `<p class="text-[11px] text-slate-400">No tienes amigos agregados aún.</p>`;
+        container.innerHTML = `
+            <div class="p-4 text-center border border-dashed border-slate-700 rounded-2xl bg-slate-900/40">
+                <p class="text-[11px] text-slate-400">No tienes amigos agregados aún.<br>Busca un ID arriba para conectar.</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = friends.map(friendId => `
-        <div onclick="openPrivateChat('${friendId}')" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl cursor-pointer text-xs font-bold text-white flex items-center justify-between transition">
-            <span><i class="fa-solid fa-user mr-2 text-indigo-400"></i>${friendId}</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+        <div onclick="openPrivateChat('${friendId}')" class="p-3 bg-slate-800/90 hover:bg-slate-700 rounded-2xl cursor-pointer text-xs font-bold text-white flex items-center justify-between transition border border-slate-700/60 shadow-sm group">
+            <div class="flex items-center space-x-2.5 truncate">
+                <div class="w-8 h-8 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-black text-xs shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <span class="truncate font-mono">${friendId}</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 shrink-0"></i>
         </div>
     `).join('');
 }
 
 window.openPrivateChat = function(friendId) {
     if (!currentUser || !currentUser.userId) return;
-    activePrivateChatId = [currentUser.userId, friendId].sort().join('_');
-    document.getElementById('private-chat-header').innerText = `Chat Privado con: ${friendId}`;
+    
+    activePrivateChatId = [currentUser.userId.trim(), friendId.trim()].sort().join('_');
+    
+    document.getElementById('private-chat-header').innerText = `💬 Chat con: ${friendId}`;
     document.getElementById('private-input-text').disabled = false;
     document.getElementById('private-send-btn').disabled = false;
+
+    const badge = document.getElementById('chat-active-badge');
+    if (badge) badge.classList.remove('hidden');
+    const extraActions = document.getElementById('chat-extra-actions');
+    if (extraActions) extraActions.classList.remove('hidden');
+
+    toggleMobilePrivateView('chat');
 
     if (privateUnsubscribe) privateUnsubscribe();
 
@@ -497,17 +607,17 @@ window.openPrivateChat = function(friendId) {
                     const msg = doc.data();
                     const isMe = msg.sender === currentUser.userId;
                     html += `
-                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                            <div class="p-2.5 rounded-2xl max-w-xs text-xs ${isMe ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-200'}">
+                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-0.5">
+                            <div class="p-3 rounded-2xl max-w-[85%] sm:max-w-xs text-xs shadow ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}">
                                 ${msg.text}
                             </div>
-                            <span class="text-[9px] text-slate-400 mt-0.5">${msg.time}</span>
+                            <span class="text-[9px] text-slate-400 px-1">${msg.time}</span>
                         </div>
                     `;
                 });
                 const container = document.getElementById('private-messages-container');
                 if (container) {
-                    container.innerHTML = html || '<p class="text-xs text-center text-slate-400 mt-10">Envía tu primer mensaje 👋</p>';
+                    container.innerHTML = html || '<p class="text-xs text-center text-slate-400 mt-16">Envía tu primer mensaje para iniciar la conversación 👋</p>';
                     container.scrollTop = container.scrollHeight;
                 }
             });
@@ -530,6 +640,15 @@ window.openPrivateChat = function(friendId) {
                 }).then(() => { input.value = ''; });
             }
         };
+    }
+};
+
+window.clearCurrentPrivateChatHistory = function() {
+    if (!activePrivateChatId) return;
+    if (confirm('¿Deseas limpiar todos los mensajes de esta conversación?')) {
+        showToast('Conversación limpiada localmente.', 'info');
+        const container = document.getElementById('private-messages-container');
+        if (container) container.innerHTML = '<p class="text-xs text-center text-slate-400 mt-16">Historial limpiado 👋</p>';
     }
 };
 
@@ -1021,7 +1140,6 @@ function showMainApp() {
 function updateUI() {
     if (!currentUser) return;
 
-    // Asignación limpia e inmutable de ID único basado en el nombre registrado
     ensureUserUniqueId(currentUser);
     saveCurrentUserData();
 
@@ -1035,7 +1153,6 @@ function updateUI() {
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
 
-    // Actualización global sincronizada de la tarjeta superior e inferior con el MISMO ID exacto
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     let node;
     while (node = walker.nextNode()) {
