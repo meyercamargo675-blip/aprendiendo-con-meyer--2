@@ -77,6 +77,18 @@
             width: 90%;
             max-width: 28rem;
         }
+
+        /* 📱 CORRECCIÓN PARA PANTALLAS MÓVILES (SCROLL EN CHATS Y LISTA DE AMIGOS) */
+        .chat-scroll-area {
+            max-height: 320px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .friends-scroll-area {
+            max-height: 180px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
@@ -84,7 +96,7 @@
     <!-- TOAST CONTAINER -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-    <!-- BANNER FEEDBACK RESPUESTA DE LECCIÓN (SIEMPRE VISIBLE AL FRENTE DE TODO) -->
+    <!-- BANNER FEEDBACK RESPUESTA DE LECCIÓN -->
     <div id="lesson-feedback-banner" class="hidden lesson-feedback-banner p-4 rounded-2xl shadow-2xl border flex items-center justify-between text-white font-bold transition-all duration-300">
         <div class="flex items-center space-x-3">
             <span id="feedback-icon" class="text-2xl"></span>
@@ -166,11 +178,16 @@
         <!-- DASHBOARD VIEW -->
         <div id="view-dashboard" class="hidden space-y-6">
 
-            <!-- STATS BAR -->
+            <!-- STATS BAR Y MOSTRAR ID ÚNICO DEL USUARIO -->
             <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                     <h2 id="welcome-title" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">¡Bienvenido!</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Aprende, practica en vivo y compite en tiempo real.</p>
+                    
+                    <!-- 🆔 BADGE CON ID DE USUARIO -->
+                    <div class="mt-2 inline-flex items-center px-3 py-1 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 rounded-xl text-xs font-bold border border-indigo-500/20">
+                        <i class="fa-solid fa-id-card mr-1.5"></i> Mi ID: <span id="user-display-id" class="ml-1 font-mono text-slate-800 dark:text-white">Cargando...</span>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-6">
                     <div class="flex items-center space-x-2">
@@ -215,7 +232,41 @@
             </section>
 
             <section id="sec-chat" class="hidden"></section>
-            <section id="sec-private-chat" class="hidden"></section>
+            
+            <!-- SECTION CHAT PRIVADO CON SCROLL Y BÚSQUEDA CORREGIDOS -->
+            <section id="sec-private-chat" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+                    <h3 class="font-bold text-lg text-slate-800 dark:text-white">Añadir Amigo por ID o Correo</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="input-search-friend" placeholder="Ingresa ID o Correo de tu amigo (ej. usuario@gmail.com)" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none">
+                        <button id="btn-add-friend" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition whitespace-nowrap">
+                            <i class="fa-solid fa-user-plus mr-1.5"></i> Agregar Amigo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTENEDOR CON SCROLL PARA AMIGOS Y CHAT -->
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl space-y-3">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-white">Mis Amigos</h4>
+                        <div id="friends-list-container" class="friends-scroll-area space-y-2">
+                            <!-- Los amigos se cargarán dinámicamente -->
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col justify-between min-h-[350px]">
+                        <div id="private-chat-messages" class="chat-scroll-area space-y-3 flex-1 mb-4 p-2">
+                            <p class="text-xs text-slate-400 text-center my-auto">Selecciona un amigo para iniciar la conversación.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="input-private-msg" placeholder="Escribe un mensaje privado..." class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none">
+                            <button id="btn-send-private-msg" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3 rounded-xl text-xs transition">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section id="sec-live" class="hidden"></section>
 
         </div>
