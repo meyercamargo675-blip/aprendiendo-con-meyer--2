@@ -57,7 +57,6 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'card', en: 'Problem Solving Skills', es: 'Habilidades de Resolución de Problemas', phonetic: 'Problem solving skils', category: 'Avanzado' }
 ];
 
-// BANCO MASIVO Y COMPLETO DE 100+ PREGUNTAS VARIADAS PARA BATALLAS 1VS1
 const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Vaca" en inglés?', img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=300', options: ['Cow', 'Horse', 'Pig', 'Sheep'], correct: 0 },
     { q: '¿Cómo se dice "Perro" en inglés?', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300', options: ['Cat', 'Dog', 'Rabbit', 'Fox'], correct: 1 },
@@ -68,78 +67,9 @@ const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Libro" en inglés?', img: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300', options: ['Pen', 'Book', 'Notebook', 'Paper'], correct: 1 },
     { q: '¿Cómo se dice "Agua" en inglés?', img: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=300', options: ['Water', 'Milk', 'Juice', 'Soda'], correct: 0 },
     { q: '¿Cómo se dice "Sol" en inglés?', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300', options: ['Moon', 'Sun', 'Star', 'Sky'], correct: 1 },
-    { q: '¿Cómo se dice "Computadora" en inglés?', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300', options: ['Computer', 'Phone', 'Tablet', 'Radio'], correct: 0 },
-    { q: '¿Cómo se dice "Árbol" en inglés?', img: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=300', options: ['Flower', 'Tree', 'Grass', 'Leaf'], correct: 1 },
-    { q: '¿Cómo se dice "Fuego" en inglés?', img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300', options: ['Fire', 'Water', 'Wind', 'Ice'], correct: 0 },
-    { q: '¿Cómo se dice "Avión" en inglés?', img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=300', options: ['Car', 'Plane', 'Ship', 'Train'], correct: 1 },
-    { q: '¿Cómo se dice "Música" en inglés?', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300', options: ['Music', 'Song', 'Dance', 'Sound'], correct: 0 },
-    { q: '¿Cómo se dice "Estrella" en inglés?', img: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=300', options: ['Sun', 'Star', 'Moon', 'Planet'], correct: 1 },
-    { q: '¿Cómo se dice "Café" en inglés?', img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300', options: ['Coffee', 'Tea', 'Water', 'Milk'], correct: 0 },
-    { q: '¿Cómo se dice "Playa" en inglés?', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300', options: ['Mountain', 'Beach', 'River', 'Desert'], correct: 1 },
-    { q: '¿Cómo se dice "Montaña" en inglés?', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300', options: ['Mountain', 'Hill', 'Valley', 'Island'], correct: 0 },
-    { q: '¿Cómo se dice "Teléfono" en inglés?', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300', options: ['Phone', 'Radio', 'TV', 'Laptop'], correct: 0 },
-    { q: '¿Cómo se dice "Bicicleta" en inglés?', img: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=300', options: ['Car', 'Bike', 'Bus', 'Train'], correct: 1 },
-    { q: '¿Cómo se dice "Reloj" en inglés?', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300', options: ['Clock', 'Ring', 'Glasses', 'Hat'], correct: 0 },
-    { q: '¿Cómo se dice "Zapato" en inglés?', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300', options: ['Shirt', 'Shoe', 'Pants', 'Socks'], correct: 1 },
-    { q: '¿Cómo se dice "Lentes / Gafas" en inglés?', img: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=300', options: ['Glasses', 'Hat', 'Mask', 'Watch'], correct: 0 },
-    { q: '¿Cómo se dice "Flor" en inglés?', img: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=300', options: ['Plant', 'Flower', 'Leaf', 'Root'], correct: 1 },
-    { q: '¿Cómo se dice "Lluvia" en inglés?', img: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=300', options: ['Rain', 'Snow', 'Wind', 'Sun'], correct: 0 },
-    { q: '¿Cómo se dice "Nieve" en inglés?', img: 'https://images.unsplash.com/photo-1491002052546-bf38f186af56?w=300', options: ['Rain', 'Snow', 'Ice', 'Cloud'], correct: 1 },
-    { q: '¿Cómo se dice "Luna" en inglés?', img: 'https://images.unsplash.com/photo-1532693322450-2cb5c51106d9?w=300', options: ['Moon', 'Star', 'Sun', 'Planet'], correct: 0 },
-    { q: '¿Cómo se dice "Fútbol" en inglés?', img: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=300', options: ['Basketball', 'Soccer', 'Tennis', 'Golf'], correct: 1 },
-    { q: '¿Cómo se dice "Guitarra" en inglés?', img: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=300', options: ['Guitar', 'Piano', 'Drum', 'Violin'], correct: 0 },
-    { q: '¿Cómo se dice "Cámara" en inglés?', img: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=300', options: ['Camera', 'Phone', 'Screen', 'Lens'], correct: 0 },
-    { q: '¿Cómo se dice "Puerta" en inglés?', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300', options: ['Door', 'Window', 'Wall', 'Roof'], correct: 0 },
-    { q: '¿Cómo se dice "Ventana" en inglés?', img: 'https://images.unsplash.com/photo-1508873696983-2df5c920ac2c?w=300', options: ['Door', 'Window', 'Glass', 'Room'], correct: 1 },
-    { q: '¿Cómo se dice "Silla" en inglés?', img: 'https://images.unsplash.com/photo-1503602642458-232111445657?w=300', options: ['Chair', 'Table', 'Desk', 'Bed'], correct: 0 },
-    { q: '¿Cómo se dice "Mesa" en inglés?', img: 'https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=300', options: ['Chair', 'Table', 'Desk', 'Shelf'], correct: 1 },
-    { q: '¿Cómo se dice "Cama" en inglés?', img: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=300', options: ['Bed', 'Sofa', 'Chair', 'Desk'], correct: 0 },
-    { q: '¿Cómo se dice "Lápiz" en inglés?', img: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=300', options: ['Pen', 'Pencil', 'Marker', 'Brush'], correct: 1 },
-    { q: '¿Cómo se dice "Pescado / Pez" en inglés?', img: 'https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=300', options: ['Fish', 'Shark', 'Whale', 'Dolphin'], correct: 0 },
-    { q: '¿Cómo se dice "León" en inglés?', img: 'https://images.unsplash.com/photo-1534188753412-3e26d1d618d6?w=300', options: ['Tiger', 'Lion', 'Bear', 'Wolf'], correct: 1 },
-    { q: '¿Cómo se dice "Tigre" en inglés?', img: 'https://images.unsplash.com/photo-1508836376141-986c5354924b?w=300', options: ['Tiger', 'Leopard', 'Cheetah', 'Cat'], correct: 0 },
-    { q: '¿Cómo se dice "Oso" en inglés?', img: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=300', options: ['Wolf', 'Bear', 'Fox', 'Deer'], correct: 1 },
-    { q: '¿Cómo se dice "Pájaro / Ave" en inglés?', img: 'https://images.unsplash.com/photo-1444464666168-49d633b86797?w=300', options: ['Bird', 'Plane', 'Bat', 'Bee'], correct: 0 },
-    { q: '¿Cómo se dice "Fresa" en inglés?', img: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=300', options: ['Apple', 'Strawberry', 'Cherry', 'Grape'], correct: 1 },
-    { q: '¿Cómo se dice "Plátano / Banano" en inglés?', img: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300', options: ['Banana', 'Lemon', 'Orange', 'Mango'], correct: 0 },
-    { q: '¿Cómo se dice "Naranja" en inglés?', img: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=300', options: ['Apple', 'Orange', 'Peach', 'Pear'], correct: 1 },
-    { q: '¿Cómo se dice "Pan" en inglés?', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300', options: ['Bread', 'Cake', 'Cookie', 'Rice'], correct: 0 },
-    { type: 'card', en: 'Milk', es: 'Leche', phonetic: 'Milk', category: 'Básico' },
-    { type: 'card', en: 'Cheese', es: 'Queso', phonetic: 'Chis', category: 'Básico' },
-    { type: 'card', en: 'Egg', es: 'Huevo', phonetic: 'Eg', category: 'Básico' },
-    { type: 'card', en: 'Meat', es: 'Carne', phonetic: 'Mit', category: 'Básico' },
-    { type: 'card', en: 'Soup', es: 'Sopa', phonetic: 'Sup', category: 'Básico' },
-    { type: 'card', en: 'Salad', es: 'Ensalada', phonetic: 'Salad', category: 'Básico' },
-    { type: 'card', en: 'Cake', es: 'Pastel / Torta', phonetic: 'Keik', category: 'Básico' },
-    { type: 'card', en: 'Shirt', es: 'Camisa', phonetic: 'Shirt', category: 'Básico' },
-    { type: 'card', en: 'Pants', es: 'Pantalón', phonetic: 'Pants', category: 'Básico' },
-    { type: 'card', en: 'Jacket', es: 'Chaqueta', phonetic: 'Djakei', category: 'Básico' },
-    { type: 'card', en: 'Hat', es: 'Sombrero / Gorra', phonetic: 'Jat', category: 'Básico' },
-    { type: 'card', en: 'School', es: 'Escuela', phonetic: 'Sckul', category: 'Básico' },
-    { type: 'card', en: 'Hospital', es: 'Hospital', phonetic: 'Jospital', category: 'Básico' },
-    { type: 'card', en: 'Hotel', es: 'Hotel', phonetic: 'Jotel', category: 'Básico' },
-    { type: 'card', en: 'Store', es: 'Tienda / Mercado', phonetic: 'Stor', category: 'Básico' },
-    { type: 'card', en: 'Money', es: 'Dinero', phonetic: 'Manei', category: 'Básico' },
-    { type: 'card', en: 'Key', es: 'Llave', phonetic: 'Ki', category: 'Básico' },
-    { type: 'card', en: 'Box', es: 'Caja', phonetic: 'Box', category: 'Básico' },
-    { type: 'card', en: 'Bag', es: 'Bolsa', phonetic: 'Bag', category: 'Básico' },
-    { type: 'card', en: 'Fire', es: 'Fuego', phonetic: 'Faier', category: 'Básico' },
-    { type: 'card', en: 'Art', es: 'Arte', phonetic: 'Art', category: 'Básico' },
-    { type: 'card', en: 'Movie', es: 'Película', phonetic: 'Muvi', category: 'Básico' },
-    { type: 'card', en: 'Game', es: 'Juego', phonetic: 'Geim', category: 'Básico' },
-    { type: 'card', en: 'Train', es: 'Tren', phonetic: 'Trein', category: 'Básico' },
-    { type: 'card', en: 'Ship', es: 'Barco', phonetic: 'Ship', category: 'Básico' },
-    { type: 'card', en: 'Road', es: 'Carretera', phonetic: 'Roud', category: 'Básico' },
-    { type: 'card', en: 'Bridge', es: 'Puente', phonetic: 'Bridj', category: 'Básico' },
-    { type: 'card', en: 'Building', es: 'Edificio', phonetic: 'Bilding', category: 'Básico' },
-    { type: 'card', en: 'City', es: 'Ciudad', phonetic: 'Siti', category: 'Básico' },
-    { type: 'card', en: 'Country', es: 'País', phonetic: 'Cantri', category: 'Básico' },
-    { type: 'card', en: 'World', es: 'Mundo', phonetic: 'Uorld', category: 'Básico' },
-    { type: 'card', en: 'Sky', es: 'Cielo', phonetic: 'Scai', category: 'Básico' },
-    { type: 'card', en: 'Cloud', es: 'Nube', phonetic: 'Claud', category: 'Básico' }
+    { q: '¿Cómo se dice "Computadora" en inglés?', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300', options: ['Computer', 'Phone', 'Tablet', 'Radio'], correct: 0 }
 ];
 
-// ESTADO GLOBAL
 let currentUser = null;
 let isRegistering = false;
 let currentLesson = null;
@@ -153,9 +83,6 @@ let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
 let facingMode = 'user';
 
-// ==========================================
-// FUNCIÓN CENTRALIZADA PARA GARANTIZAR ID ÚNICO Y BASADO EN EL NOMBRE REGISTRADO
-// ==========================================
 function ensureUserUniqueId(userObj) {
     if (!userObj) return;
     const cleanName = (userObj.name || 'USUARIO').trim().toUpperCase().replace(/\s+/g, '_');
@@ -165,7 +92,7 @@ function ensureUserUniqueId(userObj) {
 }
 
 // ==========================================
-// MÓDULO DE BATALLA 1VS1 (SALA CON CONTRASEÑA / ALEATORIO SEGURO)
+// MÓDULO DE BATALLA 1VS1
 // ==========================================
 let currentBattle = {
     mode: 'random',
@@ -212,19 +139,15 @@ window.openWarSetup = function() {
             </div>
 
             <div class="space-y-2 pt-1 text-left">
-                <label class="text-[10px] uppercase font-bold text-slate-400">Nombre de Sala (Opcional si es sala privada)</label>
+                <label class="text-[10px] uppercase font-bold text-slate-400">Nombre de Sala</label>
                 <input type="text" id="war-room-name" placeholder="Ej. SalaMeyer" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold outline-none focus:border-rose-500">
                 <label class="text-[10px] uppercase font-bold text-slate-400">Contraseña de Sala</label>
                 <input type="password" id="war-room-pass" placeholder="Contraseña..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold outline-none focus:border-rose-500">
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="startBattleMatch('random')" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">
-                    🎲 Modo Aleatorio
-                </button>
-                <button onclick="startBattleMatch('room')" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">
-                    🚪 Crear / Unir Sala
-                </button>
+                <button onclick="startBattleMatch('random')" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">🎲 Modo Aleatorio</button>
+                <button onclick="startBattleMatch('room')" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">🚪 Crear / Unir Sala</button>
             </div>
         </div>
     `;
@@ -260,7 +183,7 @@ window.startBattleMatch = function(mode) {
 };
 
 function renderBattleQuestion() {
-    if (currentBattle.questionIndex >= 15) {
+    if (currentBattle.questionIndex >= currentBattle.questions.length) {
         finishBattleMatch();
         return;
     }
@@ -274,7 +197,7 @@ function renderBattleQuestion() {
     container.innerHTML = `
         <div class="max-w-md mx-auto space-y-3 w-full p-2">
             <div class="flex justify-between items-center text-xs text-rose-400 font-mono font-bold">
-                <span>Pregunta ${currentBattle.questionIndex + 1}/15</span>
+                <span>Pregunta ${currentBattle.questionIndex + 1}/${currentBattle.questions.length}</span>
                 <span id="battle-timer" class="bg-rose-500/20 px-3 py-1 rounded-full border border-rose-500/30">⏱️ 10s</span>
             </div>
 
@@ -285,7 +208,7 @@ function renderBattleQuestion() {
 
             <div class="text-center space-y-2">
                 <div class="w-full h-32 rounded-2xl overflow-hidden border border-slate-700 shadow-md">
-                    <img src="${qData.img}" class="w-full h-full object-cover" alt="Referencia visual 3D">
+                    <img src="${qData.img}" class="w-full h-full object-cover" alt="Referencia visual">
                 </div>
                 <h3 class="text-base font-black text-white">${qData.q}</h3>
             </div>
@@ -352,7 +275,7 @@ window.exitBattleMatch = function() {
     if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
     const modal = document.getElementById('view-lesson-modal');
     if (modal) modal.classList.add('hidden');
-    showToast('Batalla finalizada y cerrada.', 'info');
+    showToast('Batalla finalizada.', 'info');
 };
 
 function finishBattleMatch() {
@@ -416,21 +339,21 @@ function renderPrivateChat() {
                     <button onclick="backToPrivateContacts()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl font-bold flex items-center space-x-1">
                         <i class="fa-solid fa-arrow-left"></i><span>Volver a Amigos</span>
                     </button>
-                    <span class="text-[10px] text-emerald-400 font-bold" id="mobile-chat-status">🟢 Conectado</span>
+                    <span class="text-[10px] text-emerald-400 font-bold">🟢 Conectado</span>
                 </div>
 
                 <div class="p-2 border-b border-slate-700/80 font-bold text-xs text-white flex justify-between items-center flex-wrap gap-2">
                     <div class="flex items-center space-x-2">
                         <span id="private-chat-header" class="truncate max-w-[180px] sm:max-w-xs">💬 Selecciona un chat privado</span>
-                        <span id="chat-active-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="En línea"></span>
+                        <span id="chat-active-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     </div>
                     <div class="flex items-center space-x-2">
                         <div id="chat-extra-actions" class="hidden flex items-center space-x-1">
-                            <button onclick="clearCurrentPrivateChatHistory()" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition" title="Limpiar mensajes"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="clearCurrentPrivateChatHistory()" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                         <div class="flex items-center space-x-2 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
                             <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Mi ID: ${currentUserIdDisplay}</span>
-                            <button onclick="copyMyUserId('${currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition px-1" title="Copiar ID"><i class="fa-solid fa-copy"></i></button>
+                            <button onclick="copyMyUserId('${currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition px-1"><i class="fa-solid fa-copy"></i></button>
                         </div>
                     </div>
                 </div>
@@ -444,7 +367,7 @@ function renderPrivateChat() {
 
                 <form id="private-send-form" class="pt-2 border-t border-slate-700/80 flex space-x-2 mt-auto">
                     <input type="text" id="private-input-text" placeholder="Escribe un mensaje..." required disabled class="flex-1 px-3 py-2.5 rounded-xl bg-slate-900 text-xs text-white outline-none border border-slate-700 disabled:opacity-50">
-                    <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('private-input-text').value = txt, 'es-ES')" class="bg-slate-800 text-white px-3.5 py-2.5 rounded-xl text-xs hover:bg-slate-700 transition" title="Dictar por voz"><i class="fa-solid fa-microphone"></i></button>
+                    <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('private-input-text').value = txt, 'es-ES')" class="bg-slate-800 text-white px-3.5 py-2.5 rounded-xl text-xs hover:bg-slate-700 transition"><i class="fa-solid fa-microphone"></i></button>
                     <button type="submit" id="private-send-btn" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs disabled:opacity-50 transition shadow">Enviar</button>
                 </form>
             </div>
@@ -540,10 +463,6 @@ window.copyMyUserId = function(idText) {
     }).catch(() => {
         showToast('No se pudo copiar automáticamente.', 'error');
     });
-};
-
-window.sendFriendRequest = function() {
-    searchAndVerifyFriendId();
 };
 
 function renderSavedPrivateContactsList() {
@@ -646,7 +565,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (GLOBAL Y OPTIMIZADA PARA MÓVILES) - CORREGIDO
+// TRANSMISIONES EN VIVO (VIDEO CORREGIDO)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -684,9 +603,9 @@ function renderLiveStream() {
                     <span id="live-status-badge" class="absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10">
                         SIN TRANSMISIÓN SELECCIONADA
                     </span>
-                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 h-[320px]">
-                        <video id="live-video-player" autoplay playsinline webkit-playsinline class="w-full h-full object-cover rounded-xl bg-black"></video>
-                        <video id="live-guest-player" autoplay playsinline webkit-playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
+                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 h-[320px] bg-black">
+                        <video id="live-video-player" autoplay playsinline muted webkit-playsinline class="w-full h-full object-cover rounded-xl bg-black"></video>
+                        <video id="live-guest-player" autoplay playsinline muted webkit-playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
 
                     <div class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2 flex-wrap gap-1">
@@ -720,6 +639,19 @@ function renderLiveStream() {
     listenForDuoInvitations();
 }
 
+function safeAttachVideoStream(videoElement, stream, isMuted = false) {
+    if (!videoElement) return;
+    videoElement.srcObject = stream;
+    videoElement.muted = isMuted;
+    const playPromise = videoElement.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(() => {
+            videoElement.muted = true;
+            videoElement.play().catch(e => console.log("Video error:", e));
+        });
+    }
+}
+
 window.toggleHostingLive = async function() {
     if (localMediaStream) {
         stopLiveHostingSafely();
@@ -733,37 +665,17 @@ window.toggleHostingLive = async function() {
     const myRoomId = `live_${cleanName}_${Math.floor(Math.random() * 1000)}`;
 
     try {
-        const constraints = {
-            video: {
-                facingMode: facingMode,
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                frameRate: { ideal: 24 }
-            },
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true
-            }
-        };
-
-        localMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        localMediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: true
+        });
+        
         const mainPlayer = document.getElementById('live-video-player');
-        if (mainPlayer) { 
-            mainPlayer.srcObject = localMediaStream; 
-            mainPlayer.muted = true; 
-            mainPlayer.play().catch(() => {});
-        }
+        safeAttachVideoStream(mainPlayer, localMediaStream, true);
 
         if (window.Peer) {
             peer = new Peer({
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' }
-                    ]
-                }
+                config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
             });
 
             peer.on('open', (peerId) => {
@@ -786,30 +698,23 @@ window.toggleHostingLive = async function() {
                     badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
                 }
                 connectToLiveChat(myRoomId, myName);
-                showToast('🚀 Transmisión global iniciada exitosamente.');
+                showToast('🚀 Transmisión en vivo iniciada.');
             });
 
-            peer.on('error', (err) => {
-                console.error("Peer error:", err);
-                showToast('Error en la conexión global de video.', 'error');
-            });
-
-            // CORRECCIÓN CLAVE: El host responde correctamente a la llamada entrante del espectador y fuerza el play() del stream remoto
             peer.on('call', (call) => {
                 call.answer(localMediaStream);
                 call.on('stream', (remoteStream) => {
                     const guestPlayer = document.getElementById('live-guest-player');
                     if (guestPlayer) {
-                        guestPlayer.srcObject = remoteStream;
                         guestPlayer.classList.remove('hidden');
-                        guestPlayer.play().catch(() => {});
+                        safeAttachVideoStream(guestPlayer, remoteStream, false);
                     }
                 });
             });
         }
     } catch (e) {
         console.error("Media error:", e);
-        showToast('Permiso de cámara/micrófono denegado o no disponible en este dispositivo.', 'error');
+        showToast('Permiso de cámara/micrófono denegado.', 'error');
     }
 };
 
@@ -858,8 +763,6 @@ window.toggleDuoMute = function() {
             audioTrack.enabled = !audioTrack.enabled;
             showToast(audioTrack.enabled ? '🎙️ Micrófono activado' : '🔇 Micrófono silenciado');
         }
-    } else {
-        showToast('No hay audio activo.', 'info');
     }
 };
 
@@ -870,8 +773,6 @@ window.toggleDuoPauseCam = function() {
             videoTrack.enabled = !videoTrack.enabled;
             showToast(videoTrack.enabled ? '📹 Cámara reanudada' : '⏸️ Cámara pausada');
         }
-    } else {
-        showToast('No hay cámara activa.', 'info');
     }
 };
 
@@ -884,19 +785,15 @@ window.toggleFlipCamera = async function() {
             audio: true 
         });
         const mainPlayer = document.getElementById('live-video-player');
-        if (mainPlayer) {
-            mainPlayer.srcObject = localMediaStream;
-            mainPlayer.muted = true;
-            mainPlayer.play().catch(() => {});
-        }
-        showToast('📷 Cámara volteada correctamente.');
+        safeAttachVideoStream(mainPlayer, localMediaStream, true);
+        showToast('📷 Cámara volteada.');
     } catch (e) {
-        showToast('No se pudo voltear la cámara en este dispositivo.', 'error');
+        showToast('No se pudo voltear la cámara.', 'error');
     }
 };
 
 window.inviteFriendToDuo = function() {
-    const friendId = prompt("Ingresa el ID exacto de tu amigo para invitarlo a transmitir en Dúo:");
+    const friendId = prompt("Ingresa el ID de tu amigo para transmitir en Dúo:");
     if (!friendId) return;
     const myName = currentUser ? currentUser.name : 'Usuario';
     if (db && peer) {
@@ -927,18 +824,17 @@ async function connectToHostDuo(hostPeerId, hostName) {
     try {
         localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
         if (window.Peer) {
-            const duoPeer = new Peer({
-                config: {
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                }
-            });
+            const duoPeer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
             duoPeer.on('open', () => {
                 const call = duoPeer.call(hostPeerId, localMediaStream);
                 call.on('stream', (hostStream) => {
                     const mainPlayer = document.getElementById('live-video-player');
                     const guestPlayer = document.getElementById('live-guest-player');
-                    if (mainPlayer) { mainPlayer.srcObject = hostStream; mainPlayer.muted = false; mainPlayer.play().catch(() => {}); }
-                    if (guestPlayer) { guestPlayer.srcObject = localMediaStream; guestPlayer.classList.remove('hidden'); guestPlayer.play().catch(() => {}); }
+                    safeAttachVideoStream(mainPlayer, hostStream, false);
+                    if (guestPlayer) {
+                        guestPlayer.classList.remove('hidden');
+                        safeAttachVideoStream(guestPlayer, localMediaStream, true);
+                    }
                     showToast(`🔴 En Dúo con ${hostName}`);
                 });
             });
@@ -970,7 +866,7 @@ window.joinRandomLiveRoom = function() {
     if (!db) return;
     db.collection('liveRooms').get().then(snapshot => {
         if (snapshot.empty) {
-            showToast('No hay transmisiones en vivo disponibles en este momento.', 'info');
+            showToast('No hay transmisiones en vivo disponibles.', 'info');
             return;
         }
         const rooms = [];
@@ -979,48 +875,40 @@ window.joinRandomLiveRoom = function() {
             if (data.roomId !== activeLiveRoomId) rooms.push(data);
         });
         if (rooms.length === 0) {
-            showToast('No hay otros lives disponibles para emparejar.', 'info');
+            showToast('No hay otros lives disponibles.', 'info');
             return;
         }
         const randomRoom = rooms[Math.floor(Math.random() * rooms.length)];
         watchLiveRoom(randomRoom.peerId, randomRoom.hostName, randomRoom.roomId);
         showToast(`🎲 Emparejado con el Live de ${randomRoom.hostName}`);
-    }).catch(() => {
-        showToast('Error al buscar sala aleatoria.', 'info');
     });
 };
 
-// CORRECCIÓN CLAVE: Función watchLiveRoom actualizada para enlazar la llamada del espectador al PeerJS del host y forzar la reproducción automática con .play()
 window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (window.Peer) {
         const viewerPeer = new Peer({
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            }
+            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
         });
+        
         viewerPeer.on('open', () => {
             const emptyStream = new MediaStream();
             const call = viewerPeer.call(peerId, localMediaStream || emptyStream);
+            
             call.on('stream', (remoteStream) => {
                 const player = document.getElementById('live-video-player');
-                if (player) { 
-                    player.srcObject = remoteStream; 
-                    player.muted = false; 
-                    player.play().catch((err) => console.log("Autoplay blocked/handled:", err));
-                }
+                safeAttachVideoStream(player, remoteStream, false);
+                
                 const badge = document.getElementById('live-status-badge');
                 if (badge) {
                     badge.innerText = `🔴 EN VIVO (${hostName})`;
                     badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
                 }
-                showToast(`📺 Conectado al Live mundial de ${hostName}`);
+                showToast(`📺 Conectado al Live de ${hostName}`);
             });
+
             call.on('error', (err) => {
-                console.error("Call error:", err);
-                showToast('No se pudo conectar a la transmisión de este usuario.', 'error');
+                console.error("Error en llamada:", err);
+                showToast('No se pudo establecer la transmisión.', 'error');
             });
         });
     }
@@ -1066,7 +954,7 @@ function connectToLiveChat(roomId, hostName) {
 }
 
 // ==========================================
-// UTILIDADES, AUTENTICACIÓN Y UI GENERAL
+// UTILIDADES Y DICCIONARIO CON AUDIO RESTAURADO
 // ==========================================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -1093,6 +981,15 @@ function startSpeechRecognition(callback, lang = 'en-US') {
     recognition.onresult = (event) => { callback(event.results[0][0].transcript); };
     recognition.onerror = () => { showToast('No se logró escuchar claramente.', 'info'); };
     recognition.start();
+}
+
+function speakText(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+    }
 }
 
 function getUsersDB() { return JSON.parse(localStorage.getItem('meyer_app_users_db')) || {}; }
@@ -1149,14 +1046,6 @@ function updateUI() {
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
 
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    let node;
-    while (node = walker.nextNode()) {
-        if (node.nodeValue && node.nodeValue.includes('Mi ID:')) {
-            node.nodeValue = `Mi ID: ${currentUser.userId}`;
-        }
-    }
-
     renderLessons();
     renderCustomWords();
     renderGlobalChat();
@@ -1164,7 +1053,6 @@ function updateUI() {
     renderLiveStream();
 }
 
-// 📚 LECCIONES
 function getUnseenItems(categoryFilter) {
     if (!currentUser.seenHistory) currentUser.seenHistory = [];
     let history = currentUser.seenHistory;
@@ -1287,15 +1175,6 @@ window.checkQuizAnswer = function(selectedIdx, correctIdx) {
     }
 };
 
-function speakText(text) {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
 function renderGlobalChat() {
     const secChat = document.getElementById('sec-chat');
     if (!secChat) return;
@@ -1334,6 +1213,7 @@ function renderGlobalChat() {
     };
 }
 
+// DICCIONARIO / PALABRAS PERSONALIZADAS CON BOTÓN DE AUDIO RESTAURADO
 function renderCustomWords() {
     const container = document.getElementById('custom-words-list');
     if (!container) return;
@@ -1342,9 +1222,15 @@ function renderCustomWords() {
         return;
     }
     container.innerHTML = currentUser.customWords.map(w => `
-        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border flex justify-between items-center">
-            <div><b class="text-white">${w.en}</b><div class="text-xs text-slate-500">${w.es}</div></div>
-            <button onclick="deleteCustomWord(${w.id})" class="text-rose-500 text-xs p-2"><i class="fa-solid fa-trash"></i></button>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center shadow-sm">
+            <div>
+                <b class="text-white text-sm">${w.en}</b>
+                <div class="text-xs text-slate-400">${w.es}</div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="speakText('${w.en.replace(/'/g, "\\'")}')" class="text-indigo-400 hover:text-indigo-300 p-2 text-xs bg-indigo-600/20 rounded-lg transition" title="Escuchar pronunciación"><i class="fa-solid fa-volume-high"></i></button>
+                <button onclick="deleteCustomWord(${w.id})" class="text-rose-500 hover:text-rose-400 p-2 text-xs bg-rose-600/20 rounded-lg transition" title="Eliminar palabra"><i class="fa-solid fa-trash"></i></button>
+            </div>
         </div>
     `).join('');
 }
