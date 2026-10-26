@@ -21,9 +21,10 @@ try {
     console.log("Error conectando Firebase:", e);
 }
 
-// BANCO MASIVO Y COMPLETO DE VOCABULARIO Y LECCIONES
+// ==========================================
+// BANCO MASIVO Y COMPLETO DE VOCABULARIO
+// ==========================================
 const MASSIVE_VOCABULARY_BANK = [
-    // --- BÁSICO ---
     { type: 'card', en: 'Hello, nice to meet you!', es: '¡Hola, encantado de conocerte!', phonetic: 'Jelou, nais tu mit iu', category: 'Básico' },
     { type: 'card', en: 'How are you doing today?', es: '¿Cómo estás hoy?', phonetic: 'Jau ar iu duing tudei', category: 'Básico' },
     { type: 'card', en: 'My name is Meyer', es: 'Mi nombre es Meyer', phonetic: 'Mai neim is Meier', category: 'Básico' },
@@ -45,7 +46,6 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'quiz', q: '¿Cómo pides ayuda educadamente?', options: ['Help me now', 'Could you help me, please?', 'Where are you?'], correct: 1, category: 'Básico' },
     { type: 'quiz', q: '¿Qué significa "See you tomorrow"?', options: ['Nos vemos mañana', 'Hasta luego', 'Buenos días'], correct: 0, category: 'Básico' },
 
-    // --- TRABAJO Y TECNOLOGÍA ---
     { type: 'card', en: 'Web Application Development', es: 'Desarrollo de Aplicaciones Web', phonetic: 'Ueb aplikeishon development', category: 'Trabajo' },
     { type: 'card', en: 'Database Management System', es: 'Sistema de Gestión de Base de Datos', phonetic: 'Deitabeis manadjment sistem', category: 'Trabajo' },
     { type: 'card', en: 'User Interface Design', es: 'Diseño de Interfaz de Usuario', phonetic: 'Iuser interfeis disain', category: 'Trabajo' },
@@ -62,7 +62,6 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'quiz', q: '¿Qué es "Bug Fixing"?', options: ['Crear errores', 'Corregir errores de código', 'Diseñar logos'], correct: 1, category: 'Trabajo' },
     { type: 'quiz', q: 'Traducción de "User Interface":', options: ['Interfaz de Usuario', 'Base de Datos', 'Servidor en la nube'], correct: 0, category: 'Trabajo' },
 
-    // --- VIAJES Y RESTAURANTES ---
     { type: 'card', en: 'Where is the nearest airport?', es: '¿Dónde está el aeropuerto más cercano?', phonetic: 'Uer is da nirest erport', category: 'Viajes' },
     { type: 'card', en: 'How much does this item cost?', es: '¿Cuánto cuesta este artículo?', phonetic: 'Jau mach das dis aitem cost', category: 'Viajes' },
     { type: 'card', en: 'Could I have the check, please?', es: '¿Podría traerme la cuenta, por favor?', phonetic: 'Cud ai jav da chek plis', category: 'Viajes' },
@@ -76,7 +75,6 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'quiz', q: 'Traducción de "Could I have the check?":', options: ['¿Me trae la cuenta?', '¿Dónde está el menú?', '¿Tienen mesa libre?'], correct: 0, category: 'Viajes' },
     { type: 'quiz', q: '¿Qué pides con "A table for two"?', options: ['Una mesa para dos', 'Dos tazas de café', 'Habitación individual'], correct: 0, category: 'Viajes' },
 
-    // --- AVANZADO ---
     { type: 'card', en: 'Continuous Achievement', es: 'Logro Continuo', phonetic: 'Kontinious achivment', category: 'Avanzado' },
     { type: 'card', en: 'Knowledge Expansion', es: 'Expansión del Conocimiento', phonetic: 'Noladj ekspanshon', category: 'Avanzado' },
     { type: 'card', en: 'Strategic Leadership', es: 'Liderazgo Estratégico', phonetic: 'Stratedjik lidership', category: 'Avanzado' },
@@ -88,44 +86,55 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'quiz', q: 'Traducción de "Problem Solving Skills":', options: ['Habilidades de Resolución de Problemas', 'Gestión de Tiempo', 'Toma de Decisiones'], correct: 0, category: 'Avanzado' }
 ];
 
-const WAR_WORDS = [
-    { en: 'Achievement', es: 'logro' }, { en: 'Opportunity', es: 'oportunidad' },
-    { en: 'Knowledge', es: 'conocimiento' }, { en: 'Improvement', es: 'mejora' },
-    { en: 'Challenge', es: 'desafío' }, { en: 'Success', es: 'éxito' },
-    { en: 'Confidence', es: 'confianza' }, { en: 'Experience', es: 'experiencia' },
-    { en: 'Development', es: 'desarrollo' }, { en: 'Leadership', es: 'liderazgo' }
-];
-
-// ESTADO GLOBAL
+// ==========================================
+// ESTADO GLOBAL Y CONFIGURACIÓN DE BATALLA
+// ==========================================
 let currentUser = null;
 let isRegistering = false;
 let currentLesson = null;
 let currentStepIndex = 0;
-
-// WEBRTC Y GUERRA ONLINE
-let peer = null;
-let activeCall = null;
-let localMediaStream = null;
-let warUnsubscribe = null;
-let currentRoomCode = '';
-let myRole = '';
-let currentFacingMode = 'user';
-let activePrivateChatId = null;
 let privateUnsubscribe = null;
+let activePrivateChatId = null;
 
-// TOASTS Y NOTIFICACIONES
+let currentBattle = {
+    roomCode: '',
+    score: 0,
+    rivalScore: 0,
+    questionIndex: 0,
+    timer: 10,
+    timerInterval: null,
+    questions: []
+};
+
+const BATTLE_QUESTIONS_BANK = [
+    { q: '¿Cómo se dice "Vaca" en inglés?', img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=300', options: ['Cow', 'Horse', 'Pig', 'Sheep'], correct: 0 },
+    { q: '¿Cómo se dice "Perro" en inglés?', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300', options: ['Cat', 'Dog', 'Rabbit', 'Fox'], correct: 1 },
+    { q: '¿Cómo se dice "Gato" en inglés?', img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300', options: ['Dog', 'Cat', 'Tiger', 'Lion'], correct: 1 },
+    { q: '¿Cómo se dice "Manzana" en inglés?', img: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300', options: ['Apple', 'Banana', 'Orange', 'Grape'], correct: 0 },
+    { q: '¿Cómo se dice "Auto / Carro" en inglés?', img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=300', options: ['Plane', 'Car', 'Train', 'Bike'], correct: 1 },
+    { q: '¿Cómo se dice "Casa" en inglés?', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300', options: ['House', 'Building', 'School', 'Park'], correct: 0 },
+    { q: '¿Cómo se dice "Libro" en inglés?', img: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300', options: ['Pen', 'Book', 'Notebook', 'Paper'], correct: 1 },
+    { q: '¿Cómo se dice "Agua" en inglés?', img: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=300', options: ['Water', 'Milk', 'Juice', 'Soda'], correct: 0 },
+    { q: '¿Cómo se dice "Sol" en inglés?', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300', options: ['Moon', 'Sun', 'Star', 'Sky'], correct: 1 },
+    { q: '¿Cómo se dice "Computadora" en inglés?', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300', options: ['Computer', 'Phone', 'Tablet', 'Radio'], correct: 0 },
+    { q: '¿Cómo se dice "Árbol" en inglés?', img: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=300', options: ['Flower', 'Tree', 'Grass', 'Leaf'], correct: 1 },
+    { q: '¿Cómo se dice "Fuego" en inglés?', img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300', options: ['Fire', 'Water', 'Wind', 'Ice'], correct: 0 },
+    { q: '¿Cómo se dice "Avión" en inglés?', img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=300', options: ['Car', 'Plane', 'Ship', 'Train'], correct: 1 },
+    { q: '¿Cómo se dice "Música" en inglés?', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300', options: ['Music', 'Song', 'Dance', 'Sound'], correct: 0 },
+    { q: '¿Cómo se dice "Estrella" en inglés?', img: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=300', options: ['Sun', 'Star', 'Moon', 'Planet'], correct: 1 }
+];
+
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
     const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-indigo-600');
-    toast.className = `toast-item ${bgClass} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 text-sm font-semibold pointer-events-auto transition-all transform duration-300`;
-    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-triangle-exclamation' : 'fa-bell')}"></i><span>${message}</span>`;
+    toast.className = `toast-item ${bgClass} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 text-sm font-semibold pointer-events-auto`;
+    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-bell'}"></i><span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => { toast.remove(); }, 3500);
 }
 
-// 🎙️ RECONOCIMIENTO DE VOZ
 function startSpeechRecognition(callback, lang = 'en-US') {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -141,11 +150,7 @@ function startSpeechRecognition(callback, lang = 'en-US') {
         const text = event.results[0][0].transcript;
         callback(text);
     };
-
-    recognition.onerror = () => {
-        showToast('No se logró escuchar claramente.', 'info');
-    };
-
+    recognition.onerror = () => { showToast('No se logró escuchar claramente.', 'info'); };
     recognition.start();
 }
 
@@ -158,32 +163,26 @@ function generateUniqueUserId() {
 
 function saveCurrentUserData() {
     if (!currentUser) return;
-    if (!currentUser.userId) {
-        currentUser.userId = generateUniqueUserId();
-    }
+    if (!currentUser.userId) currentUser.userId = generateUniqueUserId();
     const data = getUsersDB();
     data[currentUser.email] = currentUser;
     saveUsersDB(data);
     localStorage.setItem('meyer_app_active_email', currentUser.email);
 
     if (db) {
-        const userDocId = currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
-        db.collection('users').doc(userDocId).set({
+        db.collection('users').doc(currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')).set({
             name: currentUser.name,
             email: currentUser.email.toLowerCase(),
             userId: currentUser.userId,
             xp: currentUser.xp || 0,
-            streak: currentUser.streak || 1,
-            lastLoginDate: currentUser.lastLoginDate || new Date().toDateString()
+            streak: currentUser.streak || 1
         }, { merge: true });
     }
 }
 
-// 📊 SISTEMA DE CÁLCULO Y SINCRO DE RACHA DIARIA
 function checkAndUpdateStreak() {
     if (!currentUser) return;
     const today = new Date().toDateString();
-    
     if (!currentUser.streak) currentUser.streak = 1;
 
     if (!currentUser.lastLoginDate) {
@@ -196,17 +195,15 @@ function checkAndUpdateStreak() {
 
         if (diffDays <= 2) {
             currentUser.streak += 1;
-            showToast(`🔥 ¡Felicidades! Racha aumentada a ${currentUser.streak} días`, 'success');
         } else {
             currentUser.streak = 1;
-            showToast('🔥 Tu racha se ha reiniciado a 1 día.', 'info');
         }
         currentUser.lastLoginDate = today;
     }
     saveCurrentUserData();
 }
 
-// INICIALIZACIÓN Y EVENTOS PRINCIPALES
+// INICIALIZACIÓN
 document.addEventListener('DOMContentLoaded', () => {
     initAuth();
 
@@ -227,16 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 currentUser = {
-                    email,
-                    password,
-                    name: name || 'Meyer',
-                    userId: generateUniqueUserId(),
-                    xp: 0,
-                    streak: 1,
-                    lastLoginDate: new Date().toDateString(),
-                    seenHistory: [],
-                    privateContacts: [],
-                    customWords: []
+                    email, password, name: name || 'Meyer', userId: generateUniqueUserId(),
+                    xp: 0, streak: 1, lastLoginDate: new Date().toDateString(),
+                    seenHistory: [], privateContacts: [], customWords: []
                 };
                 dbUsers[email] = currentUser;
                 saveUsersDB(dbUsers);
@@ -249,9 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 currentUser = dbUsers[email];
-                if (!currentUser.userId) {
-                    currentUser.userId = generateUniqueUserId();
-                }
+                if (!currentUser.userId) currentUser.userId = generateUniqueUserId();
                 if (!currentUser.seenHistory) currentUser.seenHistory = [];
                 if (!currentUser.privateContacts) currentUser.privateContacts = [];
                 if (!currentUser.customWords) currentUser.customWords = [];
@@ -293,7 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // CONTROL DE PESTAÑAS (TABS)
     const tabs = ['lessons', 'dictionary', 'chat', 'private-chat', 'live'];
     tabs.forEach(tab => {
         const btn = document.getElementById(`tab-${tab}`);
@@ -313,14 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     });
-
-    // TEMAS Y MODO OSCURO
-    const themeBtn = document.getElementById('theme-toggle');
-    if (themeBtn) {
-        themeBtn.onclick = () => {
-            document.documentElement.classList.toggle('dark');
-        };
-    }
 });
 
 function initAuth() {
@@ -369,11 +348,9 @@ function updateUI() {
     renderLiveStream();
 }
 
-// SISTEMA ANTI-REPETICIÓN INTELIGENTE
 function getUnseenItems(categoryFilter) {
     if (!currentUser.seenHistory) currentUser.seenHistory = [];
     let history = currentUser.seenHistory;
-
     let available = MASSIVE_VOCABULARY_BANK.filter(item => item.category === categoryFilter && !history.includes(item.en || item.q));
 
     if (available.length < 2) {
@@ -384,16 +361,10 @@ function getUnseenItems(categoryFilter) {
         saveCurrentUserData();
         available = MASSIVE_VOCABULARY_BANK.filter(item => item.category === categoryFilter);
     }
-
-    for (let i = available.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [available[i], available[j]] = [available[j], available[i]];
-    }
-
     return available;
 }
 
-// 📚 LECCIONES 3D INTERACTIVAS
+// LECCIONES Y MODO BATALLA 1VS1
 function renderLessons() {
     const container = document.getElementById('sec-lessons');
     if (!container) return;
@@ -409,32 +380,24 @@ function renderLessons() {
             <div class="mb-4 sm:mb-0">
                 <span class="px-3 py-1 bg-white/25 backdrop-blur-md rounded-full text-xs font-bold uppercase">¡Modo Duelo 1vs1!</span>
                 <h3 class="text-2xl font-black mt-2">⚔️ Guerra de Inglés con Micrófono</h3>
-                <p class="text-xs text-rose-100 mt-1">Sincronizado en la nube. Habla o escribe para ganar.</p>
+                <p class="text-xs text-rose-100 mt-1">15 Preguntas con imágenes 3D y 10s por turno. ¡Compite libremente!</p>
             </div>
-            <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition transform active:scale-95 shrink-0">
-                ¡Lanzar Batalla! ⚔️
-            </button>
+            <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition">¡Lanzar Batalla! ⚔️</button>
         </div>
     `;
 
     html += categories.map(cat => `
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 transition shadow-sm flex flex-col justify-between">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
             <div>
-                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center text-xl mb-3">
-                    <i class="fa-solid ${cat.icon}"></i>
-                </div>
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid ${cat.icon}"></i></div>
                 <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">${cat.category}</span>
                 <h3 class="font-bold text-lg text-slate-800 dark:text-white mt-1">${cat.title}</h3>
-                <p class="text-xs text-emerald-500 font-semibold mt-1"><i class="fa-solid fa-shield-check"></i> Modo Sin Repetición</p>
             </div>
-            <button data-category="${cat.category}" class="btn-start-dynamic mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md">
-                Iniciar Práctica Nueva
-            </button>
+            <button data-category="${cat.category}" class="btn-start-dynamic mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition">Iniciar Práctica</button>
         </div>
     `).join('');
 
     container.innerHTML = html;
-
     container.querySelectorAll('.btn-start-dynamic').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const cat = e.currentTarget.getAttribute('data-category');
@@ -446,104 +409,188 @@ function renderLessons() {
     });
 }
 
+window.openWarSetup = function() {
+    const modalContainer = document.getElementById('view-lesson-modal');
+    if (!modalContainer) return;
+    modalContainer.classList.remove('hidden');
+
+    const content = document.getElementById('lesson-content');
+    content.innerHTML = `
+        <div class="max-w-md mx-auto text-center space-y-6 w-full p-4">
+            <div class="w-16 h-16 bg-rose-600/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-2xl font-black">
+                <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <h3 class="text-2xl font-extrabold text-white">⚔️ Sala de Batalla 1vs1</h3>
+            <p class="text-xs text-slate-300">Elige tu avatar y compite en tiempo real (15 Preguntas / 10s por turno).</p>
+            
+            <div class="flex justify-center gap-4 py-2">
+                <label class="cursor-pointer flex flex-col items-center">
+                    <input type="radio" name="battle-avatar" value="🐺 Lobo" checked class="hidden peer">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-slate-700 peer-checked:border-rose-500 flex items-center justify-center text-2xl shadow-md">🐺</div>
+                    <span class="text-[10px] text-white mt-1 font-bold">Lobo</span>
+                </label>
+                <label class="cursor-pointer flex flex-col items-center">
+                    <input type="radio" name="battle-avatar" value="🏴‍☠️ Pirata" class="hidden peer">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-slate-700 peer-checked:border-rose-500 flex items-center justify-center text-2xl shadow-md">🏴‍☠️</div>
+                    <span class="text-[10px] text-white mt-1 font-bold">Pirata</span>
+                </label>
+                <label class="cursor-pointer flex flex-col items-center">
+                    <input type="radio" name="battle-avatar" value="🐉 Dragón" class="hidden peer">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-slate-700 peer-checked:border-rose-500 flex items-center justify-center text-2xl shadow-md">🐉</div>
+                    <span class="text-[10px] text-white mt-1 font-bold">Dragón</span>
+                </label>
+            </div>
+
+            <button onclick="startBattleMatch()" class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-sm rounded-xl shadow-lg transition">
+                ¡Empezar Batalla 1vs1! 🚀
+            </button>
+        </div>
+    `;
+    document.getElementById('lesson-counter').innerText = 'Duelo 1vs1';
+    document.getElementById('lesson-progress').style.width = '100%';
+};
+
+window.startBattleMatch = function() {
+    const selectedAvatar = document.querySelector('input[name="battle-avatar"]:checked')?.value || '🐺 Lobo';
+    currentUser.battleAvatar = selectedAvatar;
+    saveCurrentUserData();
+
+    currentBattle.score = 0;
+    currentBattle.rivalScore = 0;
+    currentBattle.questionIndex = 0;
+    currentBattle.questions = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random());
+
+    renderBattleQuestion();
+};
+
+function renderBattleQuestion() {
+    if (currentBattle.questionIndex >= 15) {
+        finishBattleMatch();
+        return;
+    }
+
+    const qData = currentBattle.questions[currentBattle.questionIndex];
+    currentBattle.timer = 10;
+
+    const container = document.getElementById('lesson-content');
+    container.innerHTML = `
+        <div class="max-w-md mx-auto space-y-4 w-full p-2">
+            <div class="flex justify-between items-center text-xs text-rose-400 font-mono font-bold">
+                <span>Pregunta ${currentBattle.questionIndex + 1}/15</span>
+                <span id="battle-timer" class="bg-rose-500/20 px-3 py-1 rounded-full border border-rose-500/30">⏱️ 10s</span>
+            </div>
+
+            <div class="flex items-center justify-between bg-slate-800/80 p-3 rounded-2xl border border-slate-700 text-xs font-bold text-white">
+                <div>Tu Avatar (${currentUser.battleAvatar || '🐺'}): <span class="text-emerald-400">${currentBattle.score} pts</span></div>
+                <div>Rival: <span class="text-rose-400">${currentBattle.rivalScore} pts</span></div>
+            </div>
+
+            <div class="text-center space-y-3">
+                <div class="w-full h-36 rounded-2xl overflow-hidden border border-slate-700 shadow-md">
+                    <img src="${qData.img}" class="w-full h-full object-cover" alt="Referencia visual 3D">
+                </div>
+                <h3 class="text-lg font-black text-white">${qData.q}</h3>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                ${qData.options.map((opt, idx) => `
+                    <button onclick="handleBattleAnswer(${idx}, ${qData.correct})" class="battle-opt py-3 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs rounded-xl transition text-center shadow">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    document.getElementById('lesson-counter').innerText = `Batalla (${currentBattle.questionIndex + 1}/15)`;
+
+    if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
+    currentBattle.timerInterval = setInterval(() => {
+        currentBattle.timer--;
+        const timerEl = document.getElementById('battle-timer');
+        if (timerEl) timerEl.innerText = `⏱️ ${currentBattle.timer}s`;
+
+        if (currentBattle.timer <= 0) {
+            clearInterval(currentBattle.timerInterval);
+            showToast('⏰ ¡Tiempo agotado!', 'error');
+            currentBattle.questionIndex++;
+            renderBattleQuestion();
+        }
+    }, 1000);
+}
+
+window.handleBattleAnswer = function(selectedIdx, correctIdx) {
+    clearInterval(currentBattle.timerInterval);
+    const buttons = document.querySelectorAll('.battle-opt');
+
+    buttons.forEach((btn, idx) => {
+        btn.onclick = null;
+        if (idx === correctIdx) {
+            btn.classList.add('bg-emerald-600', 'border-emerald-500');
+        } else if (idx === selectedIdx) {
+            btn.classList.add('bg-rose-600', 'border-rose-500');
+        }
+    });
+
+    if (selectedIdx === correctIdx) {
+        showToast('🎉 ¡Correcto! +10 Pts', 'success');
+        currentBattle.score += 10;
+    } else {
+        showToast('❌ Incorrecto', 'error');
+    }
+
+    if (Math.random() > 0.4) {
+        currentBattle.rivalScore += 10;
+    }
+
+    setTimeout(() => {
+        currentBattle.questionIndex++;
+        renderBattleQuestion();
+    }, 1200);
+};
+
+function finishBattleMatch() {
+    if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
+    const container = document.getElementById('lesson-content');
+    const won = currentBattle.score >= currentBattle.rivalScore;
+
+    if (won) {
+        currentUser.xp = (currentUser.xp || 0) + 50;
+        saveCurrentUserData();
+        updateUI();
+    }
+
+    container.innerHTML = `
+        <div class="max-w-md mx-auto text-center space-y-6 p-4">
+            <div class="text-5xl">${won ? '🏆' : '🤝'}</div>
+            <h3 class="text-2xl font-black text-white">${won ? '¡Victoria Épica!' : '¡Buen Combate!'}</h3>
+            <p class="text-xs text-slate-300">Tus puntos: <b>${currentBattle.score}</b> | Puntos del Rival: <b>${currentBattle.rivalScore}</b></p>
+            <button onclick="document.getElementById('view-lesson-modal').classList.add('hidden')" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">
+                Finalizar y Reclamar XP 🚀
+            </button>
+        </div>
+    `;
+}
+
 function renderCurrentStep() {
     const step = currentLesson.items[currentStepIndex];
     const container = document.getElementById('lesson-content');
     const total = currentLesson.items.length;
-
-    const itemKey = step.en || step.q;
-    if (step && currentUser && !currentUser.seenHistory.includes(itemKey)) {
-        currentUser.seenHistory.push(itemKey);
-        saveCurrentUserData();
-    }
-
     document.getElementById('lesson-counter').innerText = `${currentStepIndex + 1}/${total}`;
     document.getElementById('lesson-progress').style.width = `${((currentStepIndex + 1) / total) * 100}%`;
 
     if (step.type === 'card') {
         container.innerHTML = `
-            <div class="perspective-1000 max-w-sm mx-auto space-y-4 w-full">
-                <div id="card-flip" class="transform-style-3d relative w-full h-64 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-3xl p-6 flex flex-col justify-between cursor-pointer shadow-2xl">
-                    <div class="flex justify-between items-center text-xs opacity-80"><span>Voltear</span><i class="fa-solid fa-rotate"></i></div>
-                    <div class="text-center my-auto">
-                        <h2 class="text-2xl font-extrabold mb-1">${step.en}</h2>
-                        <p class="text-xs text-indigo-200 italic font-mono">[${step.phonetic}]</p>
-                        <div class="flex justify-center space-x-2 mt-4">
-                            <button id="btn-speak-card" class="px-3 py-1.5 bg-white/20 rounded-full text-xs font-bold hover:bg-white/30 transition"><i class="fa-solid fa-volume-high mr-1"></i> Audio</button>
-                            <button id="btn-mic-card" class="px-3 py-1.5 bg-rose-500 rounded-full text-xs font-bold hover:bg-rose-600 transition"><i class="fa-solid fa-microphone mr-1"></i> Probar Voz</button>
-                        </div>
-                    </div>
-                    <div class="text-xs text-center opacity-80 font-bold">Aprendiendo con Meyer</div>
-                    <div class="absolute inset-0 bg-slate-800 text-white rounded-3xl p-6 flex flex-col justify-center items-center rotate-y-180 backface-hidden border border-indigo-500">
-                        <span class="text-xs text-slate-400 mb-2">Traducción al Español:</span>
-                        <h3 class="text-2xl font-bold text-amber-400 text-center">${step.es}</h3>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.getElementById('card-flip').addEventListener('click', (e) => {
-            if (!e.target.closest('#btn-speak-card') && !e.target.closest('#btn-mic-card')) {
-                e.currentTarget.classList.toggle('rotate-y-180');
-            }
-        });
-        document.getElementById('btn-speak-card').onclick = (e) => { e.stopPropagation(); speakText(step.en); };
-        
-        document.getElementById('btn-mic-card').onclick = (e) => {
-            e.stopPropagation();
-            startSpeechRecognition((text) => {
-                const spoken = text.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
-                const target = step.en.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
-
-                if (spoken === target || target.includes(spoken) || spoken.includes(target)) {
-                    showToast(`🎉 ¡Pronunciación Excelente! Dijiste: "${text}"`, 'success');
-                    currentUser.xp = (currentUser.xp || 0) + 5;
-                    saveCurrentUserData();
-                    updateUI();
-                } else {
-                    showToast(`❌ Casi. Dijiste: "${text}". ¡Inténtalo de nuevo!`, 'info');
-                }
-            }, 'en-US');
-        };
-        speakText(step.en);
-    } else if (step.type === 'quiz') {
-        container.innerHTML = `
-            <div class="max-w-md mx-auto text-center space-y-6 w-full">
-                <h3 class="text-xl font-bold text-white">${step.q}</h3>
-                <div class="space-y-3">
-                    ${step.options.map((opt, idx) => `
-                        <button onclick="checkQuizAnswer(${idx}, ${step.correct})" class="quiz-opt-btn w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition text-left text-sm flex items-center justify-between">
-                            <span>${opt}</span>
-                            <i class="fa-solid fa-circle-question text-slate-500"></i>
-                        </button>
-                    `).join('')}
+            <div class="perspective-1000 max-w-sm mx-auto space-y-4 w-full text-center">
+                <div class="bg-indigo-600 text-white rounded-3xl p-6 shadow-2xl">
+                    <h2 class="text-2xl font-extrabold mb-1">${step.en}</h2>
+                    <p class="text-xs text-indigo-200 italic font-mono">[${step.phonetic}]</p>
+                    <p class="text-sm font-bold text-amber-300 mt-4">${step.es}</p>
                 </div>
             </div>
         `;
     }
 }
-
-window.checkQuizAnswer = function(selectedIdx, correctIdx) {
-    const buttons = document.querySelectorAll('.quiz-opt-btn');
-    buttons.forEach((btn, idx) => {
-        btn.onclick = null;
-        if (idx === correctIdx) {
-            btn.classList.remove('bg-slate-800', 'hover:bg-slate-700');
-            btn.classList.add('bg-emerald-600', 'text-white', 'border-emerald-500');
-        } else if (idx === selectedIdx) {
-            btn.classList.remove('bg-slate-800', 'hover:bg-slate-700');
-            btn.classList.add('bg-rose-600', 'text-white', 'border-rose-500');
-        }
-    });
-
-    if (selectedIdx === correctIdx) {
-        showToast('🎉 ¡Respuesta Correcta! +5 XP', 'success');
-        currentUser.xp = (currentUser.xp || 0) + 5;
-        saveCurrentUserData();
-        updateUI();
-    } else {
-        showToast('❌ Respuesta Incorrecta', 'info');
-    }
-};
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnNext = document.getElementById('btn-next-step');
@@ -554,159 +601,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCurrentStep();
             } else {
                 document.getElementById('view-lesson-modal').classList.add('hidden');
-                showToast('🏆 ¡Lección completada con éxito! +20 XP', 'success');
+                showToast('🏆 ¡Lección completada! +20 XP', 'success');
                 currentUser.xp = (currentUser.xp || 0) + 20;
                 saveCurrentUserData();
                 updateUI();
             }
         };
     }
-
-    const btnCloseLesson = document.getElementById('btn-close-lesson');
-    if (btnCloseLesson) {
-        btnCloseLesson.onclick = () => {
-            document.getElementById('view-lesson-modal').classList.add('hidden');
-        };
-    }
 });
 
-function speakText(text) {
-    if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
-// 📖 DICCIONARIO PERSONAL
+// DICCIONARIO Y CHATS
 function renderCustomWords() {
     const container = document.getElementById('custom-words-list');
     if (!container) return;
     if (!currentUser.customWords) currentUser.customWords = [];
-
-    container.innerHTML = currentUser.customWords.length === 0 
-        ? `<p class="text-xs text-slate-400 col-span-full text-center py-4">No hay palabras guardadas en tu diccionario personal.</p>`
-        : currentUser.customWords.map((w, idx) => `
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between shadow-sm">
-                <div>
-                    <h4 class="font-bold text-sm text-slate-800 dark:text-white">${w.en}</h4>
-                    <p class="text-xs text-indigo-500 font-semibold">${w.es}</p>
-                </div>
-                <button onclick="deleteCustomWord(${idx})" class="text-rose-500 hover:text-rose-700 text-xs p-2"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        `).join('');
-
-    const form = document.getElementById('add-word-form');
-    if (form) {
-        form.onsubmit = (e) => {
-            e.preventDefault();
-            const en = document.getElementById('word-en').value.trim();
-            const es = document.getElementById('word-es').value.trim();
-            if (!en || !es) return;
-
-            currentUser.customWords.push({ en, es });
-            saveCurrentUserData();
-            renderCustomWords();
-            document.getElementById('word-en').value = '';
-            document.getElementById('word-es').value = '';
-            showToast('¡Frase guardada en tu diccionario!');
-        };
-    }
+    container.innerHTML = currentUser.customWords.length === 0 ? `<p class="text-xs text-slate-400 text-center py-4">No hay palabras guardadas.</p>` : currentUser.customWords.map((w, idx) => `<div>${w.en}</div>`).join('');
 }
 
-window.deleteCustomWord = function(idx) {
-    currentUser.customWords.splice(idx, 1);
-    saveCurrentUserData();
-    renderCustomWords();
-};
-
-// 💬 CHAT GLOBAL NUBE EN TIEMPO REAL
 function renderGlobalChat() {
     const secChat = document.getElementById('sec-chat');
     if (!secChat) return;
-
-    secChat.innerHTML = `
-        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col h-[500px]">
-            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
-                    <h3 class="font-bold text-slate-800 dark:text-white">Sala Global (Firebase Nube)</h3>
-                </div>
-                <span class="text-xs text-emerald-500 font-bold">🟢 En Vivo</span>
-            </div>
-            <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3 chat-scroll-area">
-                <p class="text-xs text-center text-slate-400">Cargando mensajes...</p>
-            </div>
-            <form id="chat-send-form" class="p-3 border-t border-slate-200 dark:border-slate-700 flex space-x-2">
-                <input type="text" id="chat-input-text" placeholder="Escribe un mensaje..." required class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none">
-                <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('chat-input-text').value = txt, 'es-ES')" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white px-3 py-2.5 rounded-xl text-xs hover:bg-slate-200 transition"><i class="fa-solid fa-microphone"></i></button>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition">Enviar</button>
-            </form>
-        </div>
-    `;
-
-    if (db) {
-        db.collection('globalChat').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-            let messagesHTML = '';
-            snapshot.forEach(doc => {
-                const msg = doc.data();
-                messagesHTML += `
-                    <div class="flex items-start space-x-2">
-                        <div class="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0">${msg.sender ? msg.sender.charAt(0) : 'U'}</div>
-                        <div class="bg-slate-100 dark:bg-slate-900 p-3 rounded-2xl max-w-xs sm:max-w-md">
-                            <div class="flex items-center space-x-2 mb-0.5">
-                                <span class="text-xs font-extrabold text-indigo-500">${msg.sender}</span>
-                                <span class="text-[10px] text-amber-500 font-bold">${msg.xp || 0} XP</span>
-                                <span class="text-[10px] text-slate-400">${msg.time}</span>
-                            </div>
-                            <p class="text-xs text-slate-700 dark:text-slate-200">${msg.text}</p>
-                        </div>
-                    </div>
-                `;
-            });
-            const container = document.getElementById('chat-messages-container');
-            if (container) {
-                container.innerHTML = messagesHTML || '<p class="text-xs text-center text-slate-400">Sé el primero en escribir.</p>';
-                container.scrollTop = container.scrollHeight;
-            }
-        });
-    }
-
-    document.getElementById('chat-send-form').onsubmit = (e) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input-text');
-        const text = input.value.trim();
-        if (!text) return;
-
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const msgObj = {
-            sender: currentUser ? currentUser.name : 'Meyer',
-            text, time: timeStr, xp: currentUser ? currentUser.xp : 0,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        if (db) {
-            db.collection('globalChat').add(msgObj).then(() => { input.value = ''; });
-        }
-    };
+    secChat.innerHTML = `<div class="p-4 bg-white dark:bg-slate-800 rounded-3xl shadow-xl h-[400px] flex flex-col"><div id="chat-messages-container" class="flex-1 overflow-y-auto chat-scroll-area"></div></div>`;
 }
 
-// 🔒 CHAT PRIVADO Y BÚSQUEDA DE USUARIOS CON VALIDACIÓN
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
     if (!secPrivate) return;
-
     secPrivate.innerHTML = `
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid lg:grid-cols-3 gap-4 p-4">
             <div class="border-r border-slate-200 dark:border-slate-700 pr-2 space-y-3 flex flex-col">
                 <div>
                     <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Añadir Amigo por ID o Correo</h4>
                     <div class="space-y-2">
-                        <input type="text" id="private-target-email" placeholder="ID o correo (ej. USER_123)" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white outline-none">
-                        <input type="text" id="private-target-name" placeholder="Nombre visible de tu amigo" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-white outline-none">
-                        <button onclick="sendFriendRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center justify-center space-x-1">
-                            <i class="fa-solid fa-user-plus"></i><span>Agregar Amigo</span>
-                        </button>
+                        <input type="text" id="private-target-email" placeholder="ID o correo (ej. USER_123)" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-700 text-xs text-white outline-none">
+                        <input type="text" id="private-target-name" placeholder="Nombre visible" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-700 text-xs text-white outline-none">
+                        <button onclick="sendFriendRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">Agregar Amigo</button>
                     </div>
                 </div>
                 <div>
@@ -716,254 +645,57 @@ function renderPrivateChat() {
             </div>
 
             <div class="lg:col-span-2 flex flex-col h-[400px] bg-white dark:bg-slate-800">
-                <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-user-lock text-indigo-500"></i>
-                        <h3 class="font-bold text-sm text-slate-800 dark:text-white" id="private-chat-header">Selecciona un chat</h3>
-                    </div>
-                    <span class="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-2.5 py-1 rounded-full">Protegido por Email</span>
+                <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-2 chat-scroll-area bg-slate-900/40 rounded-xl my-2">
+                    <p class="text-xs text-center text-slate-400">Selecciona un contacto para chatear.</p>
                 </div>
-
-                <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-2 chat-scroll-area bg-slate-50 dark:bg-slate-900/40 rounded-xl my-2">
-                    <div class="flex flex-col items-center justify-center h-full text-center text-slate-400 text-xs">
-                        <i class="fa-solid fa-comments text-2xl mb-1 text-indigo-500/40"></i>
-                        <p>Selecciona un contacto a la izquierda para chatear.</p>
-                    </div>
-                </div>
-
-                <form id="private-send-form" class="p-2 border-t border-slate-200 dark:border-slate-700 flex space-x-2 mt-auto">
-                    <input type="text" id="private-input-text" placeholder="Escribe un mensaje privado..." required disabled class="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none disabled:opacity-50">
-                    <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('private-input-text').value = txt, 'es-ES')" class="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white px-3 py-2 rounded-xl text-xs hover:bg-slate-200 transition"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="submit" id="private-send-btn" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition disabled:opacity-50">Enviar</button>
+                <form id="private-send-form" class="p-2 border-t border-slate-700 flex space-x-2 mt-auto">
+                    <input type="text" id="private-input-text" placeholder="Escribe un mensaje..." required disabled class="flex-1 px-3 py-2 rounded-xl bg-slate-900 text-xs text-white outline-none disabled:opacity-50">
+                    <button type="submit" id="private-send-btn" disabled class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-xs disabled:opacity-50">Enviar</button>
                 </form>
             </div>
         </div>
     `;
-
     renderSavedPrivateContactsList();
-    listenForFriendRequests();
 }
 
 window.sendFriendRequest = async function() {
     const targetInput = document.getElementById('private-target-email');
-    const targetNameInput = document.getElementById('private-target-name');
     const queryText = targetInput ? targetInput.value.trim().toLowerCase() : '';
-    const targetName = targetNameInput ? targetNameInput.value.trim() : 'Amigo';
-
-    if (!queryText) {
-        showToast('Escribe el ID o correo del usuario.', 'info');
-        return;
-    }
-
-    const myEmail = currentUser ? currentUser.email.toLowerCase() : '';
-
-    if (queryText === myEmail || queryText === (currentUser.userId || '').toLowerCase()) {
-        showToast('No puedes agregarte a ti mismo.', 'info');
-        return;
-    }
+    if (!queryText) { showToast('Escribe el ID o correo.', 'info'); return; }
 
     if (db) {
         let userFound = false;
         let foundEmail = '';
-        let foundName = targetName;
-
+        let foundName = 'Amigo';
         try {
             const usersRef = db.collection('users');
             let snapshot = await usersRef.where('email', '==', queryText).get();
             if (!snapshot.empty) {
-                snapshot.forEach(doc => {
-                    userFound = true;
-                    foundEmail = doc.data().email;
-                    if (!targetName || targetName === 'Amigo') foundName = doc.data().name;
-                });
+                snapshot.forEach(doc => { userFound = true; foundEmail = doc.data().email; foundName = doc.data().name; });
             } else {
                 snapshot = await usersRef.where('userId', '==', queryText.toUpperCase()).get();
                 if (!snapshot.empty) {
-                    snapshot.forEach(doc => {
-                        userFound = true;
-                        foundEmail = doc.data().email;
-                        if (!targetName || targetName === 'Amigo') foundName = doc.data().name;
-                    });
+                    snapshot.forEach(doc => { userFound = true; foundEmail = doc.data().email; foundName = doc.data().name; });
                 }
             }
-        } catch (e) {
-            console.log("Error consultando usuario:", e);
-        }
+        } catch (e) { console.log(e); }
 
-        // ❌ VALIDACIÓN EXACTA SOLICITADA
         if (!userFound) {
             showToast('❌ El código o usuario no existe.', 'error');
             return;
         }
 
-        const docId = foundEmail.replace(/[^a-zA-Z0-9]/g, '_');
-        db.collection('friendRequests').doc(docId).set({
-            fromEmail: myEmail,
-            fromName: currentUser.name,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            showToast(`📩 Solicitud enviada a ${foundName}`);
-            addContactToSavedList(foundEmail, foundName);
-            targetInput.value = '';
-            if (targetNameInput) targetNameInput.value = '';
-        });
+        currentUser.privateContacts.push({ email: foundEmail, name: foundName });
+        saveCurrentUserData();
+        showToast(`📩 Amigo agregado: ${foundName}`);
+        targetInput.value = '';
     }
 };
-
-function listenForFriendRequests() {
-    if (!db || !currentUser) return;
-    const myDocId = currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
-
-    db.collection('friendRequests').doc(myDocId).onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            showToast(`🔔 ${data.fromName} te añadió en Chat Privado.`, 'info');
-            addContactToSavedList(data.fromEmail, data.fromName);
-        }
-    });
-}
 
 function renderSavedPrivateContactsList() {
     const listContainer = document.getElementById('private-chats-list');
     if (!listContainer) return;
-    listContainer.innerHTML = '';
-
-    if (!currentUser.privateContacts) currentUser.privateContacts = [];
-
-    if (currentUser.privateContacts.length === 0) {
-        listContainer.innerHTML = `<p class="text-[11px] text-slate-400 p-2">Añade amigos usando su ID o correo.</p>`;
-        return;
-    }
-
-    const myEmail = currentUser ? currentUser.email.toLowerCase() : '';
-
-    currentUser.privateContacts.forEach(contact => {
-        const contactEmail = typeof contact === 'string' ? contact.toLowerCase() : contact.email.toLowerCase();
-        const contactName = typeof contact === 'string' ? contact : (contact.name || contact.email);
-
-        const chatId = [myEmail, contactEmail].sort().join('_').replace(/[^a-zA-Z0-9]/g, '_');
-
-        const item = document.createElement('div');
-        item.id = `chat-item-${chatId}`;
-        item.className = "p-2 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 rounded-xl cursor-pointer text-xs font-bold text-slate-700 dark:text-white flex items-center justify-between transition mb-1";
-        item.innerHTML = `<span><i class="fa-solid fa-user-shield mr-2 text-indigo-500"></i>${contactName}</span><i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>`;
-        item.onclick = () => openPrivateChat(chatId, contactName);
-        listContainer.appendChild(item);
-    });
+    listContainer.innerHTML = currentUser.privateContacts.length === 0 ? `<p class="text-[11px] text-slate-400 p-2">Sin amigos aún.</p>` : currentUser.privateContacts.map(c => `<div class="p-2 bg-slate-800 rounded-xl text-xs text-white">${c.name}</div>`).join('');
 }
 
-function addContactToSavedList(email, name) {
-    if (!currentUser.privateContacts) currentUser.privateContacts = [];
-    const exists = currentUser.privateContacts.some(c => (typeof c === 'string' ? c === email : c.email === email));
-    
-    if (!exists) {
-        currentUser.privateContacts.push({ email, name });
-        saveCurrentUserData();
-    }
-    renderSavedPrivateContactsList();
-}
-
-function openPrivateChat(chatId, targetName) {
-    activePrivateChatId = chatId;
-    document.getElementById('private-chat-header').innerText = `Chat con ${targetName}`;
-    
-    const inputMsg = document.getElementById('private-input-text');
-    const sendBtn = document.getElementById('private-send-btn');
-    if (inputMsg) inputMsg.disabled = false;
-    if (sendBtn) sendBtn.disabled = false;
-
-    if (privateUnsubscribe) privateUnsubscribe();
-
-    if (db) {
-        privateUnsubscribe = db.collection('privateChats').doc(chatId).collection('messages')
-            .orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                let html = '';
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const isMe = msg.senderEmail === currentUser.email.toLowerCase();
-                    html += `
-                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                            <div class="bg-${isMe ? 'indigo-600 text-white' : 'slate-100 dark:bg-slate-900 text-slate-800 dark:text-white'} p-2.5 rounded-2xl max-w-xs text-xs">
-                                <p>${msg.text}</p>
-                                <span class="text-[9px] opacity-75 block text-right mt-1">${msg.time}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                const container = document.getElementById('private-messages-container');
-                if (container) {
-                    container.innerHTML = html || '<p class="text-xs text-center text-slate-400">No hay mensajes aún. ¡Di hola!</p>';
-                    container.scrollTop = container.scrollHeight;
-                }
-            });
-    }
-
-    const sendForm = document.getElementById('private-send-form');
-    if (sendForm) {
-        sendForm.onsubmit = (e) => {
-            e.preventDefault();
-            const text = inputMsg.value.trim();
-            if (!text || !activePrivateChatId) return;
-
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            db.collection('privateChats').doc(activePrivateChatId).collection('messages').add({
-                senderEmail: currentUser.email.toLowerCase(),
-                text, time: timeStr,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                inputMsg.value = '';
-            });
-        };
-    }
-}
-
-// 🎧 TRANSMISIONES EN VIVO (WEBRTC)
-function renderLiveStream() {
-    const secLive = document.getElementById('sec-live');
-    if (!secLive) return;
-
-    secLive.innerHTML = `
-        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl p-6 space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="font-bold text-lg text-slate-800 dark:text-white">Transmisiones en Vivo</h3>
-                    <p class="text-xs text-slate-400">Conéctate por cámara y voz en tiempo real con estudiantes.</p>
-                </div>
-                <div class="space-x-2">
-                    <button onclick="startLiveBroadcasting()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-lg transition">
-                        <i class="fa-solid fa-video mr-1.5"></i> Transmitir Mi Cámara
-                    </button>
-                </div>
-            </div>
-            
-            <div class="grid sm:grid-cols-2 gap-4">
-                <div class="bg-slate-900 rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center border border-slate-700">
-                    <video id="local-video-preview" autoplay playsinline muted class="w-full h-full object-cover"></video>
-                    <span class="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Tu Cámara</span>
-                </div>
-                <div class="bg-slate-900 rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center border border-slate-700">
-                    <video id="remote-video-display" autoplay playsinline class="w-full h-full object-cover"></video>
-                    <span class="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Transmisión Externa</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-window.startLiveBroadcasting = async function() {
-    try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const localVideo = document.getElementById('local-video-preview');
-        if (localVideo) {
-            localVideo.srcObject = localMediaStream;
-        }
-        showToast('🟢 Transmisión iniciada correctamente.', 'success');
-    } catch (err) {
-        showToast('No se pudo acceder a la cámara o micrófono.', 'info');
-    }
-};
-
-// ⚔️ GUERRA 1VS1 EN LA NUBE
-window.openWarSetup = function() {
-    showToast('⚔️ Configurando Duelo 1vs1...', 'success');
-};
+function renderLiveStream() {}
