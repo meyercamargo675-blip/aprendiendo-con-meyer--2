@@ -32,7 +32,7 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'card', en: 'You are welcome', es: 'De nada', phonetic: 'Iu ar uelcom', category: 'Básico' },
     { type: 'card', en: 'See you tomorrow', es: 'Nos vemos mañana', phonetic: 'Si iu tumorou', category: 'Básico' },
     { type: 'quiz', q: '¿Cómo dices "Encantado de conocerte"?', options: ['Nice to meet you', 'Good morning', 'See you later'], correct: 0, category: 'Básico' },
-    { type: 'quiz', q: '¿Qué significa "How are you?"', options: ['¿Cómo estás?', '¿De dónde eres?', '¿Cuál es tu nombre?'], correct: 0, category: 'Básico' },
+    { type: 'quiz', q: '¿Qué significa "How are you?"', options: ['¿Cómo estás?', '¿De dónde eres?', '¿Cuál estu nombre?'], correct: 0, category: 'Básico' },
 
     { type: 'card', en: 'Web Application Development', es: 'Desarrollo de Aplicaciones Web', phonetic: 'Ueb aplikeishon development', category: 'Trabajo' },
     { type: 'card', en: 'Database Management System', es: 'Sistema de Gestión de Base de Datos', phonetic: 'Deitabeis manadjment sistem', category: 'Trabajo' },
@@ -590,20 +590,38 @@ window.toggleHostingLive = async function() {
         localMediaStream = null;
         const mainPlayer = document.getElementById('live-video-player');
         if (mainPlayer) mainPlayer.srcObject = null;
+        
+        const guestPlayer = document.getElementById('live-guest-player');
+        if (guestPlayer) {
+            guestPlayer.srcObject = null;
+            guestPlayer.classList.add('hidden');
+        }
+
         if (peer) { peer.destroy(); peer = null; }
         if (db) db.collection('liveRooms').doc(myRoomId).delete().catch(() => {});
+        
         if (btn) {
             btn.innerText = "Transmitir Mi Cámara 📹";
             btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
         }
         if (btnDuo) btnDuo.classList.add('hidden');
+
+        const badge = document.getElementById('live-status-badge');
+        if (badge) {
+            badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
+            badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10";
+        }
+
         activeLiveRoomId = null;
         showToast('⏹️ Transmisión finalizada y apagada.', 'info');
     } else {
         try {
             localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
             const mainPlayer = document.getElementById('live-video-player');
-            if (mainPlayer) { mainPlayer.srcObject = localMediaStream; mainPlayer.muted = true; }
+            if (mainPlayer) { 
+                mainPlayer.srcObject = localMediaStream; 
+                mainPlayer.muted = true; 
+            }
 
             if (window.Peer) {
                 peer = new Peer();
@@ -673,7 +691,10 @@ window.toggleFlipCamera = async function() {
     try {
         localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
         const mainPlayer = document.getElementById('live-video-player');
-        if (mainPlayer) mainPlayer.srcObject = localMediaStream;
+        if (mainPlayer) {
+            mainPlayer.srcObject = localMediaStream;
+            mainPlayer.muted = true;
+        }
         showToast('📷 Cámara volteada.');
     } catch (e) {
         showToast('No se pudo voltear la cámara.', 'error');
@@ -716,9 +737,10 @@ async function connectToHostDuo(hostPeerId, hostName) {
             duoPeer.on('open', () => {
                 const call = duoPeer.call(hostPeerId, localMediaStream);
                 call.on('stream', (hostStream) => {
-                    document.getElementById('live-video-player').srcObject = hostStream;
-                    document.getElementById('live-guest-player').srcObject = localMediaStream;
-                    document.getElementById('live-guest-player').classList.remove('hidden');
+                    const mainPlayer = document.getElementById('live-video-player');
+                    const guestPlayer = document.getElementById('live-guest-player');
+                    if (mainPlayer) { mainPlayer.srcObject = hostStream; mainPlayer.muted = false; }
+                    if (guestPlayer) { guestPlayer.srcObject = localMediaStream; guestPlayer.classList.remove('hidden'); }
                     showToast(`🔴 En Dúo con ${hostName}`);
                 });
             });
@@ -781,7 +803,10 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
             const call = viewerPeer.call(peerId, localMediaStream || new MediaStream());
             call.on('stream', (remoteStream) => {
                 const player = document.getElementById('live-video-player');
-                if (player) { player.srcObject = remoteStream; player.muted = false; }
+                if (player) { 
+                    player.srcObject = remoteStream; 
+                    player.muted = false; 
+                }
                 const badge = document.getElementById('live-status-badge');
                 if (badge) {
                     badge.innerText = `🔴 EN VIVO (${hostName})`;
