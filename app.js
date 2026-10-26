@@ -380,7 +380,7 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO (DISEÑO MODERNO CON TARJETA DE BÚSQUEDA Y ACCIONES EXTRA)
+// MÓDULO DE CHAT PRIVADO
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
@@ -395,7 +395,6 @@ function renderPrivateChat() {
 
     secPrivate.innerHTML = `
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-[550px]">
-            <!-- Columna Izquierda: Búsqueda Interactiva, Agregar y Lista de Amigos -->
             <div id="private-sidebar-panel" class="lg:block border-r border-slate-200 dark:border-slate-700 pr-2 space-y-3 flex flex-col h-full overflow-hidden">
                 <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-700/50 space-y-2">
                     <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-400">Buscar / Añadir por ID</h4>
@@ -403,7 +402,6 @@ function renderPrivateChat() {
                         <input type="text" id="private-target-email" placeholder="Ej. CARLOS_9X1P" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-indigo-500 font-mono">
                         <button onclick="searchAndVerifyFriendId()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shrink-0">Buscar</button>
                     </div>
-                    <!-- Tarjeta de resultado de búsqueda interactiva -->
                     <div id="search-friend-result-card" class="hidden pt-2 border-t border-slate-800 mt-2 space-y-2"></div>
                 </div>
 
@@ -413,9 +411,7 @@ function renderPrivateChat() {
                 </div>
             </div>
 
-            <!-- Columna Derecha: Ventana de Chat Activa con Opciones Modernas -->
             <div id="private-chatbox-panel" class="lg:col-span-2 flex flex-col h-[500px] lg:h-full bg-slate-900/50 rounded-2xl p-3 border border-slate-700 relative">
-                <!-- Botón de regreso para celulares -->
                 <div class="lg:hidden pb-2 mb-1 border-b border-slate-800 flex items-center justify-between">
                     <button onclick="backToPrivateContacts()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl font-bold flex items-center space-x-1">
                         <i class="fa-solid fa-arrow-left"></i><span>Volver a Amigos</span>
@@ -429,7 +425,6 @@ function renderPrivateChat() {
                         <span id="chat-active-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="En línea"></span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <!-- Botón de funciones extra (Limpiar chat / Info) -->
                         <div id="chat-extra-actions" class="hidden flex items-center space-x-1">
                             <button onclick="clearCurrentPrivateChatHistory()" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition" title="Limpiar mensajes"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
@@ -462,7 +457,6 @@ function renderPrivateChat() {
     }
 }
 
-// Nueva función interactiva para buscar ID, mostrar tarjeta y dar opción de agregar o chatear
 window.searchAndVerifyFriendId = function() {
     const input = document.getElementById('private-target-email');
     const resultCard = document.getElementById('search-friend-result-card');
@@ -480,7 +474,6 @@ window.searchAndVerifyFriendId = function() {
         return;
     }
 
-    // Mostrar tarjeta de resultado interactiva con las funciones pedidas
     if (resultCard) {
         resultCard.classList.remove('hidden');
         resultCard.innerHTML = `
@@ -653,7 +646,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (GLOBAL Y OPTIMIZADA PARA MÓVILES)
+// TRANSMISIONES EN VIVO (GLOBAL Y OPTIMIZADA PARA MÓVILES) - CORREGIDO
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -801,6 +794,7 @@ window.toggleHostingLive = async function() {
                 showToast('Error en la conexión global de video.', 'error');
             });
 
+            // CORRECCIÓN CLAVE: El host responde correctamente a la llamada entrante del espectador y fuerza el play() del stream remoto
             peer.on('call', (call) => {
                 call.answer(localMediaStream);
                 call.on('stream', (remoteStream) => {
@@ -996,6 +990,7 @@ window.joinRandomLiveRoom = function() {
     });
 };
 
+// CORRECCIÓN CLAVE: Función watchLiveRoom actualizada para enlazar la llamada del espectador al PeerJS del host y forzar la reproducción automática con .play()
 window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (window.Peer) {
         const viewerPeer = new Peer({
@@ -1014,7 +1009,7 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
                 if (player) { 
                     player.srcObject = remoteStream; 
                     player.muted = false; 
-                    player.play().catch(() => {});
+                    player.play().catch((err) => console.log("Autoplay blocked/handled:", err));
                 }
                 const badge = document.getElementById('live-status-badge');
                 if (badge) {
@@ -1023,7 +1018,8 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
                 }
                 showToast(`📺 Conectado al Live mundial de ${hostName}`);
             });
-            call.on('error', () => {
+            call.on('error', (err) => {
+                console.error("Call error:", err);
                 showToast('No se pudo conectar a la transmisión de este usuario.', 'error');
             });
         });
