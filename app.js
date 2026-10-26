@@ -74,19 +74,13 @@ let currentUser = null;
 let isRegistering = false;
 let currentLesson = null;
 let currentStepIndex = 0;
-
-let peer = null;
-let localMediaStream = null;
 let activePrivateChatId = null;
 let privateUnsubscribe = null;
-let activeLiveRoomId = null;
-let liveChatUnsubscribe = null;
-let facingMode = 'user';
 
 function ensureUserUniqueId(userObj) {
     if (!userObj) return;
-    const cleanName = (userObj.name || 'USUARIO').trim().toUpperCase().replace(/\s+/g, '_');
-    if (!userObj.userId || userObj.userId.includes('Cargando') || !userObj.userId.startsWith(cleanName)) {
+    const cleanName = (userObj.name || 'MEYER').trim().toUpperCase().replace(/\s+/g, '_');
+    if (!userObj.userId || userObj.userId === 'MEYER_ID' || userObj.userId.includes('Cargando') || !userObj.userId.startsWith(cleanName)) {
         userObj.userId = `${cleanName}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     }
 }
@@ -303,7 +297,7 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO
+// MÓDULO DE CHAT PRIVADO & BÚSQUEDA POR ID
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
@@ -314,7 +308,7 @@ function renderPrivateChat() {
         saveCurrentUserData();
     }
 
-    const currentUserIdDisplay = currentUser && currentUser.userId ? currentUser.userId : 'CARGANDO_ID';
+    const currentUserIdDisplay = currentUser && currentUser.userId ? currentUser.userId : 'MEYER_ID';
 
     secPrivate.innerHTML = `
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-[550px]">
@@ -352,8 +346,8 @@ function renderPrivateChat() {
                             <button onclick="clearCurrentPrivateChatHistory()" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                         <div class="flex items-center space-x-2 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
-                            <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Mi ID: ${currentUserIdDisplay}</span>
-                            <button onclick="copyMyUserId('${currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition px-1"><i class="fa-solid fa-copy"></i></button>
+                            <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Mi ID: ${currentUser?.userId || currentUserIdDisplay}</span>
+                            <button onclick="copyMyUserId('${currentUser?.userId || currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition px-1"><i class="fa-solid fa-copy"></i></button>
                         </div>
                     </div>
                 </div>
@@ -457,7 +451,7 @@ window.backToPrivateContacts = function() {
 };
 
 window.copyMyUserId = function(idText) {
-    const cleanId = idText.replace('Tu ID: ', '').replace('Mi ID: ', '').trim();
+    const cleanId = idText.replace('Tu ID: ', '').replace('Mi ID: ', '').replace('ID: ', '').trim();
     navigator.clipboard.writeText(cleanId).then(() => {
         showToast('📋 ¡ID copiado al portapapeles!');
     }).catch(() => {
@@ -565,396 +559,34 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (VIDEO CORREGIDO)
+// TRANSMISIONES EN VIVO (CON AVISO DE PRONTA APERTURA)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
     if (!secLive) return;
 
     secLive.innerHTML = `
-        <div class="bg-slate-950 rounded-3xl p-4 sm:p-6 text-white border border-slate-800 shadow-2xl space-y-4 max-w-4xl mx-auto">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 bg-rose-500 rounded-full animate-ping"></span>
-                    <h3 class="text-lg font-black">Transmisiones en Vivo 🔴 (Mundial y Celulares)</h3>
-                </div>
-                <div class="flex space-x-2 flex-wrap gap-2">
-                    <button id="btn-random-live" onclick="joinRandomLiveRoom()" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-bold text-xs rounded-xl transition shadow-md flex items-center space-x-1">
-                        <i class="fa-solid fa-shuffle"></i><span>Emparejamiento Aleatorio</span>
-                    </button>
-                    <button id="btn-invite-duo" onclick="inviteFriendToDuo()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs rounded-xl transition hidden shadow-md flex items-center space-x-1">
-                        <i class="fa-solid fa-user-plus"></i><span>Invitar a Dúo</span>
-                    </button>
-                    <button id="btn-toggle-live" onclick="toggleHostingLive()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg">
-                        Transmitir Mi Cámara 📹
-                    </button>
-                </div>
+        <div class="bg-slate-950 rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-2xl space-y-6 max-w-4xl mx-auto text-center">
+            <div class="w-20 h-20 bg-rose-600/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-3xl font-black animate-pulse shadow-lg">
+                <i class="fa-solid fa-satellite-dish"></i>
             </div>
-
-            <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 space-y-2">
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Transmisiones Activas en la Nube:</span>
-                <div id="live-rooms-list" class="flex flex-wrap gap-2">
-                    <span class="text-xs text-slate-500 italic">No hay transmisiones en vivo activas.</span>
-                </div>
+            <div class="space-y-2">
+                <span class="px-3.5 py-1 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-black uppercase tracking-wider">Próxima Apertura</span>
+                <h3 class="text-2xl sm:text-3xl font-black">Transmisiones en Vivo 🔴 (Mundial y Celulares)</h3>
+                <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+                    Estamos ultimando los detalles en la nube para traerte videollamadas y transmisiones en vivo globales de ultra bajo retraso. ¡Pronto estará listo para que conectes con todo el mundo! 🚀
+                </p>
             </div>
-
-            <div class="grid md:grid-cols-3 gap-4 h-[400px]">
-                <div class="md:col-span-2 relative bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col">
-                    <span id="live-status-badge" class="absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10">
-                        SIN TRANSMISIÓN SELECCIONADA
-                    </span>
-                    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-1 p-1 h-[320px] bg-black">
-                        <video id="live-video-player" autoplay playsinline muted webkit-playsinline class="w-full h-full object-cover rounded-xl bg-black"></video>
-                        <video id="live-guest-player" autoplay playsinline muted webkit-playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
-                    </div>
-
-                    <div class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2 flex-wrap gap-1">
-                        <button type="button" onclick="toggleDuoMute()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
-                            <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
-                        </button>
-                        <button type="button" onclick="toggleDuoPauseCam()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
-                            <i class="fa-solid fa-video"></i><span>Pausar</span>
-                        </button>
-                        <button type="button" onclick="toggleFlipCamera()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
-                            <i class="fa-solid fa-camera-rotate"></i><span>Voltear</span>
-                        </button>
-                        <button type="button" onclick="stopLiveHostingSafely()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
-                            <i class="fa-solid fa-phone-slash"></i><span>Apagar / Salir</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-full overflow-hidden">
-                    <div class="p-3 border-b border-slate-800 text-xs font-bold text-slate-400" id="live-chat-header">💬 Chat de la Sala</div>
-                    <div id="live-chat-messages" class="flex-1 p-3 overflow-y-auto space-y-2 text-xs"></div>
-                    <form id="live-chat-form" class="p-2 border-t border-slate-800 flex space-x-1">
-                        <input type="text" id="live-chat-input" placeholder="Comentar..." required disabled class="flex-1 px-3 py-2 rounded-xl bg-slate-950 text-xs text-white outline-none border border-slate-800 disabled:opacity-50">
-                        <button type="submit" id="live-chat-btn" disabled class="bg-rose-600 text-white font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-paper-plane"></i></button>
-                    </form>
-                </div>
+            <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800 inline-flex items-center space-x-3 shadow-inner">
+                <span class="w-3 h-3 bg-amber-500 rounded-full animate-ping"></span>
+                <span class="text-xs font-bold text-amber-300">Módulo en fase final de integración y pruebas.</span>
             </div>
         </div>
     `;
-    listenToActiveLiveRooms();
-    listenForDuoInvitations();
-}
-
-function safeAttachVideoStream(videoElement, stream, isMuted = false) {
-    if (!videoElement) return;
-    videoElement.srcObject = stream;
-    videoElement.muted = isMuted;
-    const playPromise = videoElement.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(() => {
-            videoElement.muted = true;
-            videoElement.play().catch(e => console.log("Video error:", e));
-        });
-    }
-}
-
-window.toggleHostingLive = async function() {
-    if (localMediaStream) {
-        stopLiveHostingSafely();
-        return;
-    }
-
-    const btn = document.getElementById('btn-toggle-live');
-    const btnDuo = document.getElementById('btn-invite-duo');
-    const myName = currentUser ? currentUser.name : 'Usuario';
-    const cleanName = myName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const myRoomId = `live_${cleanName}_${Math.floor(Math.random() * 1000)}`;
-
-    try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-            audio: true
-        });
-        
-        const mainPlayer = document.getElementById('live-video-player');
-        safeAttachVideoStream(mainPlayer, localMediaStream, true);
-
-        if (window.Peer) {
-            peer = new Peer({
-                config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
-            });
-
-            peer.on('open', (peerId) => {
-                if (db) {
-                    db.collection('liveRooms').doc(myRoomId).set({
-                        roomId: myRoomId, peerId: peerId, hostName: myName,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-                activeLiveRoomId = myRoomId;
-                if (btn) {
-                    btn.innerText = "⏹️ En Vivo Activo";
-                    btn.className = "px-4 py-2 bg-emerald-600 font-bold text-xs rounded-xl shadow-lg";
-                }
-                if (btnDuo) btnDuo.classList.remove('hidden');
-
-                const badge = document.getElementById('live-status-badge');
-                if (badge) {
-                    badge.innerText = `🔴 EN VIVO (${myName})`;
-                    badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
-                }
-                connectToLiveChat(myRoomId, myName);
-                showToast('🚀 Transmisión en vivo iniciada.');
-            });
-
-            peer.on('call', (call) => {
-                call.answer(localMediaStream);
-                call.on('stream', (remoteStream) => {
-                    const guestPlayer = document.getElementById('live-guest-player');
-                    if (guestPlayer) {
-                        guestPlayer.classList.remove('hidden');
-                        safeAttachVideoStream(guestPlayer, remoteStream, false);
-                    }
-                });
-            });
-        }
-    } catch (e) {
-        console.error("Media error:", e);
-        showToast('Permiso de cámara/micrófono denegado.', 'error');
-    }
-};
-
-window.stopLiveHostingSafely = function() {
-    if (localMediaStream) {
-        localMediaStream.getTracks().forEach(track => track.stop());
-        localMediaStream = null;
-    }
-    const mainPlayer = document.getElementById('live-video-player');
-    if (mainPlayer) { mainPlayer.srcObject = null; }
-    
-    const guestPlayer = document.getElementById('live-guest-player');
-    if (guestPlayer) {
-        guestPlayer.srcObject = null;
-        guestPlayer.classList.add('hidden');
-    }
-
-    if (peer) { peer.destroy(); peer = null; }
-
-    if (db && activeLiveRoomId) {
-        db.collection('liveRooms').doc(activeLiveRoomId).delete().catch(() => {});
-    }
-
-    const btn = document.getElementById('btn-toggle-live');
-    if (btn) {
-        btn.innerText = "Transmitir Mi Cámara 📹";
-        btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
-    }
-    const btnDuo = document.getElementById('btn-invite-duo');
-    if (btnDuo) btnDuo.classList.add('hidden');
-
-    const badge = document.getElementById('live-status-badge');
-    if (badge) {
-        badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
-        badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10";
-    }
-
-    activeLiveRoomId = null;
-    showToast('⏹️ Transmisión finalizada.', 'info');
-};
-
-window.toggleDuoMute = function() {
-    if (localMediaStream) {
-        const audioTrack = localMediaStream.getAudioTracks()[0];
-        if (audioTrack) {
-            audioTrack.enabled = !audioTrack.enabled;
-            showToast(audioTrack.enabled ? '🎙️ Micrófono activado' : '🔇 Micrófono silenciado');
-        }
-    }
-};
-
-window.toggleDuoPauseCam = function() {
-    if (localMediaStream) {
-        const videoTrack = localMediaStream.getVideoTracks()[0];
-        if (videoTrack) {
-            videoTrack.enabled = !videoTrack.enabled;
-            showToast(videoTrack.enabled ? '📹 Cámara reanudada' : '⏸️ Cámara pausada');
-        }
-    }
-};
-
-window.toggleFlipCamera = async function() {
-    facingMode = facingMode === 'user' ? 'environment' : 'user';
-    if (localMediaStream) localMediaStream.getTracks().forEach(track => track.stop());
-    try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, 
-            audio: true 
-        });
-        const mainPlayer = document.getElementById('live-video-player');
-        safeAttachVideoStream(mainPlayer, localMediaStream, true);
-        showToast('📷 Cámara volteada.');
-    } catch (e) {
-        showToast('No se pudo voltear la cámara.', 'error');
-    }
-};
-
-window.inviteFriendToDuo = function() {
-    const friendId = prompt("Ingresa el ID de tu amigo para transmitir en Dúo:");
-    if (!friendId) return;
-    const myName = currentUser ? currentUser.name : 'Usuario';
-    if (db && peer) {
-        db.collection('duoInvitations').doc(friendId.trim()).set({
-            hostName: myName, hostPeerId: peer.id,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => { showToast(`📩 Invitación enviada a ${friendId}`); });
-    }
-};
-
-function listenForDuoInvitations() {
-    if (!db || !currentUser) return;
-    const myKey = currentUser.userId;
-    db.collection('duoInvitations').doc(myKey).onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            if (confirm(`🔔 ${data.hostName} te invitó a transmitir en Dúo. ¿Aceptar?`)) {
-                db.collection('duoInvitations').doc(myKey).delete();
-                connectToHostDuo(data.hostPeerId, data.hostName);
-            } else {
-                db.collection('duoInvitations').doc(myKey).delete();
-            }
-        }
-    });
-}
-
-async function connectToHostDuo(hostPeerId, hostName) {
-    try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
-        if (window.Peer) {
-            const duoPeer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } });
-            duoPeer.on('open', () => {
-                const call = duoPeer.call(hostPeerId, localMediaStream);
-                call.on('stream', (hostStream) => {
-                    const mainPlayer = document.getElementById('live-video-player');
-                    const guestPlayer = document.getElementById('live-guest-player');
-                    safeAttachVideoStream(mainPlayer, hostStream, false);
-                    if (guestPlayer) {
-                        guestPlayer.classList.remove('hidden');
-                        safeAttachVideoStream(guestPlayer, localMediaStream, true);
-                    }
-                    showToast(`🔴 En Dúo con ${hostName}`);
-                });
-            });
-        }
-    } catch (e) {
-        showToast('Error de cámara para el Dúo.', 'error');
-    }
-}
-
-function listenToActiveLiveRooms() {
-    if (!db) return;
-    db.collection('liveRooms').onSnapshot(snapshot => {
-        const container = document.getElementById('live-rooms-list');
-        if (!container) return;
-        if (snapshot.empty) {
-            container.innerHTML = `<span class="text-xs text-slate-500 italic">No hay transmisiones en vivo activas.</span>`;
-            return;
-        }
-        let html = '';
-        snapshot.forEach(doc => {
-            const room = doc.data();
-            html += `<button onclick="watchLiveRoom('${room.peerId}', '${room.hostName}', '${room.roomId}')" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold shadow hover:bg-rose-600 hover:text-white transition">🔴 Live de ${room.hostName}</button>`;
-        });
-        container.innerHTML = html;
-    });
-}
-
-window.joinRandomLiveRoom = function() {
-    if (!db) return;
-    db.collection('liveRooms').get().then(snapshot => {
-        if (snapshot.empty) {
-            showToast('No hay transmisiones en vivo disponibles.', 'info');
-            return;
-        }
-        const rooms = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.roomId !== activeLiveRoomId) rooms.push(data);
-        });
-        if (rooms.length === 0) {
-            showToast('No hay otros lives disponibles.', 'info');
-            return;
-        }
-        const randomRoom = rooms[Math.floor(Math.random() * rooms.length)];
-        watchLiveRoom(randomRoom.peerId, randomRoom.hostName, randomRoom.roomId);
-        showToast(`🎲 Emparejado con el Live de ${randomRoom.hostName}`);
-    });
-};
-
-window.watchLiveRoom = function(peerId, hostName, roomId) {
-    if (window.Peer) {
-        const viewerPeer = new Peer({
-            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] }
-        });
-        
-        viewerPeer.on('open', () => {
-            const emptyStream = new MediaStream();
-            const call = viewerPeer.call(peerId, localMediaStream || emptyStream);
-            
-            call.on('stream', (remoteStream) => {
-                const player = document.getElementById('live-video-player');
-                safeAttachVideoStream(player, remoteStream, false);
-                
-                const badge = document.getElementById('live-status-badge');
-                if (badge) {
-                    badge.innerText = `🔴 EN VIVO (${hostName})`;
-                    badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
-                }
-                showToast(`📺 Conectado al Live de ${hostName}`);
-            });
-
-            call.on('error', (err) => {
-                console.error("Error en llamada:", err);
-                showToast('No se pudo establecer la transmisión.', 'error');
-            });
-        });
-    }
-    activeLiveRoomId = roomId;
-    connectToLiveChat(roomId, hostName);
-};
-
-function connectToLiveChat(roomId, hostName) {
-    const header = document.getElementById('live-chat-header');
-    const input = document.getElementById('live-chat-input');
-    const btn = document.getElementById('live-chat-btn');
-    if (header) header.innerText = `💬 Chat: Live de ${hostName}`;
-    if (input) input.disabled = false;
-    if (btn) btn.disabled = false;
-
-    if (liveChatUnsubscribe) liveChatUnsubscribe();
-    if (db) {
-        liveChatUnsubscribe = db.collection('liveRooms').doc(roomId).collection('comments')
-            .orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-                let html = '';
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    html += `<div class="text-xs"><b class="text-indigo-400">${msg.sender}:</b> ${msg.text}</div>`;
-                });
-                const container = document.getElementById('live-chat-messages');
-                if (container) { container.innerHTML = html; container.scrollTop = container.scrollHeight; }
-            });
-    }
-
-    const chatForm = document.getElementById('live-chat-form');
-    if (chatForm) {
-        chatForm.onsubmit = (e) => {
-            e.preventDefault();
-            const txtInput = document.getElementById('live-chat-input');
-            const text = txtInput ? txtInput.value.trim() : '';
-            if (!text || !activeLiveRoomId) return;
-            db.collection('liveRooms').doc(activeLiveRoomId).collection('comments').add({
-                sender: currentUser ? currentUser.name : 'Usuario',
-                text, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => { if (txtInput) txtInput.value = ''; });
-        };
-    }
 }
 
 // ==========================================
-// UTILIDADES Y DICCIONARIO CON AUDIO RESTAURADO
+// UTILIDADES, AUDIO Y DICCIONARIO
 // ==========================================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -996,6 +628,7 @@ function getUsersDB() { return JSON.parse(localStorage.getItem('meyer_app_users_
 function saveUsersDB(data) { localStorage.setItem('meyer_app_users_db', JSON.stringify(data)); }
 function saveCurrentUserData() {
     if (!currentUser) return;
+    ensureUserUniqueId(currentUser);
     const data = getUsersDB();
     data[currentUser.email] = currentUser;
     saveUsersDB(data);
@@ -1041,10 +674,36 @@ function updateUI() {
     const xpCount = document.getElementById('xp-count');
     const streakCount = document.getElementById('streak-count');
 
-    if (welcomeHeader) welcomeHeader.innerText = `Hola, ${currentUser.name}`;
-    if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name}! Sistema Completo Listo`;
+    if (welcomeHeader) welcomeHeader.innerText = `Hola, ${currentUser.name || 'Meyer'}`;
+    if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name || 'Meyer'}! Sistema Completo Listo`;
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
+
+    // ELIMINACIÓN SEGURA DEL ID DE ARRIBA (PARA QUE QUEDE LIMPIO)
+    const headerTopBadge = document.getElementById('header-top-id-badge');
+    if (headerTopBadge) {
+        headerTopBadge.remove();
+    }
+
+    // INSERCIÓN DEL ID LIMPIO EN LA TARJETA DE BIENVENIDA
+    let cardIdBadge = document.getElementById('card-user-id');
+    if (!cardIdBadge) {
+        const welcomeTextContainer = document.querySelector('#welcome-title')?.parentElement;
+        if (welcomeTextContainer) {
+            const cardBadgeDiv = document.createElement('div');
+            cardBadgeDiv.id = 'card-user-id';
+            cardBadgeDiv.className = 'mt-2 inline-flex';
+            welcomeTextContainer.appendChild(cardBadgeDiv);
+        }
+    }
+    if (document.getElementById('card-user-id')) {
+        document.getElementById('card-user-id').innerHTML = `
+            <span class="text-xs font-mono text-indigo-300 bg-slate-900/80 px-3 py-1 rounded-xl border border-slate-700/80 shadow-inner inline-flex items-center space-x-1.5">
+                <span>Mi ID: <b>${currentUser.userId}</b></span>
+                <button onclick="copyMyUserId('${currentUser.userId}')" class="text-xs text-indigo-400 hover:text-indigo-300 ml-1"><i class="fa-solid fa-copy"></i></button>
+            </span>
+        `;
+    }
 
     renderLessons();
     renderCustomWords();
@@ -1213,7 +872,7 @@ function renderGlobalChat() {
     };
 }
 
-// DICCIONARIO / PALABRAS PERSONALIZADAS CON BOTÓN DE AUDIO RESTAURADO
+// DICCIONARIO / PALABRAS PERSONALIZADAS CON BOTÓN DE AUDIO
 function renderCustomWords() {
     const container = document.getElementById('custom-words-list');
     if (!container) return;
@@ -1269,7 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = getUsersDB();
 
             if (isRegistering) {
-                const name = nameInput ? nameInput.value.trim() : '';
+                const name = nameInput ? nameInput.value.trim() : 'Meyer';
                 if (!name) { showToast('Ingresa tu nombre.', 'error'); return; }
 
                 currentUser = { 
