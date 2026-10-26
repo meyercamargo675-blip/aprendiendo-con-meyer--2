@@ -57,7 +57,7 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'card', en: 'Problem Solving Skills', es: 'Habilidades de Resolución de Problemas', phonetic: 'Problem solving skils', category: 'Avanzado' }
 ];
 
-// BANCO MASIVO DE 100+ PREGUNTAS VARIADAS PARA BATALLAS 1VS1 (SIN REPETICIÓN)
+// BANCO MASIVO Y COMPLETO DE 100+ PREGUNTAS VARIADAS PARA BATALLAS 1VS1
 const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Vaca" en inglés?', img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=300', options: ['Cow', 'Horse', 'Pig', 'Sheep'], correct: 0 },
     { q: '¿Cómo se dice "Perro" en inglés?', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300', options: ['Cat', 'Dog', 'Rabbit', 'Fox'], correct: 1 },
@@ -145,20 +145,21 @@ let isRegistering = false;
 let currentLesson = null;
 let currentStepIndex = 0;
 
-// WEBRTC Y WEBSOCKETS EN VIVO
 let peer = null;
 let localMediaStream = null;
 let activePrivateChatId = null;
 let privateUnsubscribe = null;
 let activeLiveRoomId = null;
 let liveChatUnsubscribe = null;
+let facingMode = 'user';
 
 // ==========================================
-// MÓDULO DE BATALLA 1VS1 (ANTI-REPETICIÓN + 15 PREGUNTAS VARIADAS)
+// MÓDULO DE BATALLA 1VS1 (SALA CON CONTRASEÑA / ALEATORIO SEGURO)
 // ==========================================
 let currentBattle = {
     mode: 'random',
-    roomCode: '',
+    roomName: '',
+    roomPass: '',
     score: 0,
     rivalScore: 0,
     questionIndex: 0,
@@ -179,7 +180,7 @@ window.openWarSetup = function() {
                 <i class="fa-solid fa-gamepad"></i>
             </div>
             <h3 class="text-2xl font-extrabold text-white">⚔️ Guerra de Inglés 1vs1</h3>
-            <p class="text-xs text-slate-300">Banco masivo de más de 100 fotos variadas. ¡15 preguntas aleatorias sin repetición y 10s por turno!</p>
+            <p class="text-xs text-slate-300">15 Preguntas variadas sin repetición, 10s por turno y avatares.</p>
             
             <div class="flex justify-center gap-4 py-1">
                 <label class="cursor-pointer flex flex-col items-center">
@@ -199,8 +200,11 @@ window.openWarSetup = function() {
                 </label>
             </div>
 
-            <div class="space-y-2 pt-1">
-                <input type="text" id="war-room-code-input" placeholder="Código de Sala (Opcional)" class="w-full px-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold text-center uppercase outline-none focus:border-rose-500">
+            <div class="space-y-2 pt-1 text-left">
+                <label class="text-[10px] uppercase font-bold text-slate-400">Nombre de Sala (Opcional si es sala privada)</label>
+                <input type="text" id="war-room-name" placeholder="Ej. SalaMeyer" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold outline-none focus:border-rose-500">
+                <label class="text-[10px] uppercase font-bold text-slate-400">Contraseña de Sala</label>
+                <input type="password" id="war-room-pass" placeholder="Contraseña..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold outline-none focus:border-rose-500">
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-2">
@@ -219,9 +223,17 @@ window.openWarSetup = function() {
 
 window.startBattleMatch = function(mode) {
     const selectedAvatar = document.querySelector('input[name="battle-avatar"]:checked')?.value || '🐺 Lobo';
-    const codeInput = document.getElementById('war-room-code-input');
+    const roomNameInput = document.getElementById('war-room-name');
+    const roomPassInput = document.getElementById('war-room-pass');
+
     currentBattle.mode = mode;
-    currentBattle.roomCode = codeInput ? codeInput.value.trim().toUpperCase() : '';
+    currentBattle.roomName = roomNameInput ? roomNameInput.value.trim() : '';
+    currentBattle.roomPass = roomPassInput ? roomPassInput.value.trim() : '';
+
+    if (mode === 'room' && (!currentBattle.roomName || !currentBattle.roomPass)) {
+        showToast('Debes ingresar nombre y contraseña de sala.', 'error');
+        return;
+    }
 
     if (currentUser) {
         currentUser.battleAvatar = selectedAvatar;
@@ -231,10 +243,7 @@ window.startBattleMatch = function(mode) {
     currentBattle.score = 0;
     currentBattle.rivalScore = 0;
     currentBattle.questionIndex = 0;
-    
-    // SELECCIÓN ALEATORIA DE 15 PREGUNTAS ÚNICAS DEL BANCO MASIVO SIN REPETIR
-    const shuffledBank = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random());
-    currentBattle.questions = shuffledBank.slice(0, 15);
+    currentBattle.questions = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random()).slice(0, 15);
 
     renderBattleQuestion();
 };
@@ -265,7 +274,7 @@ function renderBattleQuestion() {
 
             <div class="text-center space-y-2">
                 <div class="w-full h-32 rounded-2xl overflow-hidden border border-slate-700 shadow-md">
-                    <img src="${qData.img}" class="w-full h-full object-cover" alt="Referencia visual 3D variada">
+                    <img src="${qData.img}" class="w-full h-full object-cover" alt="Referencia visual 3D">
                 </div>
                 <h3 class="text-base font-black text-white">${qData.q}</h3>
             </div>
@@ -277,11 +286,14 @@ function renderBattleQuestion() {
                     </button>
                 `).join('')}
             </div>
+
+            <div class="text-center pt-2">
+                <button onclick="exitBattleMatch()" class="px-4 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
+                    Salir / Cerrar Batalla ❌
+                </button>
+            </div>
         </div>
     `;
-
-    const counterEl = document.getElementById('lesson-counter');
-    if (counterEl) counterEl.innerText = `Batalla (${currentBattle.questionIndex + 1}/15)`;
 
     if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
     currentBattle.timerInterval = setInterval(() => {
@@ -304,11 +316,8 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
 
     buttons.forEach((btn, idx) => {
         btn.onclick = null;
-        if (idx === correctIdx) {
-            btn.classList.add('bg-emerald-600', 'border-emerald-500');
-        } else if (idx === selectedIdx) {
-            btn.classList.add('bg-rose-600', 'border-rose-500');
-        }
+        if (idx === correctIdx) btn.classList.add('bg-emerald-600', 'border-emerald-500');
+        else if (idx === selectedIdx) btn.classList.add('bg-rose-600', 'border-rose-500');
     });
 
     if (selectedIdx === correctIdx) {
@@ -318,7 +327,7 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
         showToast('❌ Incorrecto', 'error');
     }
 
-    if (Math.random() > 0.4) {
+    if (currentBattle.mode === 'random' && Math.random() > 0.5) {
         currentBattle.rivalScore += 10;
     }
 
@@ -326,6 +335,13 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
         currentBattle.questionIndex++;
         renderBattleQuestion();
     }, 1200);
+};
+
+window.exitBattleMatch = function() {
+    if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
+    const modal = document.getElementById('view-lesson-modal');
+    if (modal) modal.classList.add('hidden');
+    showToast('Batalla finalizada y cerrada.', 'info');
 };
 
 function finishBattleMatch() {
@@ -353,7 +369,7 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO (CON SCROLL FLUIDO ANTI-BLOQUEO)
+// MÓDULO DE CHAT PRIVADO CON SCROLL FLUIDO E ID
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
@@ -365,8 +381,8 @@ function renderPrivateChat() {
                 <div>
                     <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Añadir Amigo por ID</h4>
                     <div class="space-y-2">
-                        <input type="text" id="private-target-email" placeholder="ID (ej. USER_ABC123)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none">
-                        <button onclick="sendFriendRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">Agregar por ID</button>
+                        <input type="text" id="private-target-email" placeholder="ID de tu amigo" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none">
+                        <button onclick="sendFriendRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl text-xs transition">Agregar Amigo</button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-1">
@@ -436,7 +452,7 @@ function renderSavedPrivateContactsList() {
 }
 
 window.openPrivateChat = function(friendId) {
-    activePrivateChatId = [currentUser.userId || currentUser.email, friendId].sort().join('_');
+    activePrivateChatId = [currentUser.userId, friendId].sort().join('_');
     document.getElementById('private-chat-header').innerText = `Chat Privado con: ${friendId}`;
     document.getElementById('private-input-text').disabled = false;
     document.getElementById('private-send-btn').disabled = false;
@@ -450,7 +466,7 @@ window.openPrivateChat = function(friendId) {
                 let html = '';
                 snapshot.forEach(doc => {
                     const msg = doc.data();
-                    const isMe = msg.sender === (currentUser.userId || currentUser.email);
+                    const isMe = msg.sender === currentUser.userId;
                     html += `
                         <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                             <div class="p-2.5 rounded-2xl max-w-xs text-xs ${isMe ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-200'}">
@@ -479,7 +495,7 @@ window.openPrivateChat = function(friendId) {
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             if (db) {
                 db.collection('privateChats').doc(activePrivateChatId).collection('messages').add({
-                    sender: currentUser.userId || currentUser.email,
+                    sender: currentUser.userId,
                     text, time: timeStr,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 }).then(() => { input.value = ''; });
@@ -489,327 +505,7 @@ window.openPrivateChat = function(friendId) {
 };
 
 // ==========================================
-// UTILIDADES, RECONOCIMIENTO DE VOZ Y TOASTS
-// ==========================================
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-indigo-600');
-    toast.className = `toast-item ${bgClass} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 text-sm font-semibold pointer-events-auto`;
-    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-bell'}"></i><span>${message}</span>`;
-    container.appendChild(toast);
-    setTimeout(() => { toast.remove(); }, 3500);
-}
-
-function startSpeechRecognition(callback, lang = 'en-US') {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        showToast('Tu navegador no soporta entrada de voz.', 'info');
-        return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = lang;
-    recognition.interimResults = false;
-    showToast('🎙️ Escuchando... Habla ahora', 'info');
-
-    recognition.onresult = (event) => {
-        callback(event.results[0][0].transcript);
-    };
-    recognition.onerror = () => { showToast('No se logró escuchar claramente.', 'info'); };
-    recognition.start();
-}
-
-function getUsersDB() { return JSON.parse(localStorage.getItem('meyer_app_users_db')) || {}; }
-function saveUsersDB(data) { localStorage.setItem('meyer_app_users_db', JSON.stringify(data)); }
-function saveCurrentUserData() {
-    if (!currentUser) return;
-    const data = getUsersDB();
-    data[currentUser.email] = currentUser;
-    saveUsersDB(data);
-    localStorage.setItem('meyer_app_active_email', currentUser.email);
-}
-
-function initAuth() {
-    const activeEmail = localStorage.getItem('meyer_app_active_email');
-    const data = getUsersDB();
-    if (activeEmail && data[activeEmail]) {
-        currentUser = data[activeEmail];
-        if (!currentUser.userId) {
-            currentUser.userId = 'USER_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-            saveCurrentUserData();
-        }
-        showMainApp();
-    } else { showAuthModal(); }
-}
-
-function showAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    const dash = document.getElementById('view-dashboard');
-    if (modal) modal.classList.remove('hidden');
-    if (dash) dash.classList.add('hidden');
-}
-
-function showMainApp() {
-    const modal = document.getElementById('auth-modal');
-    const dash = document.getElementById('view-dashboard');
-    const logoutBtn = document.getElementById('btn-logout');
-    if (modal) modal.classList.add('hidden');
-    if (dash) dash.classList.remove('hidden');
-    if (logoutBtn) logoutBtn.classList.remove('hidden');
-    updateUI();
-}
-
-function updateUI() {
-    if (!currentUser) return;
-    const welcomeHeader = document.getElementById('header-user-welcome');
-    const welcomeTitle = document.getElementById('welcome-title');
-    const xpCount = document.getElementById('xp-count');
-    const streakCount = document.getElementById('streak-count');
-
-    if (welcomeHeader) welcomeHeader.innerText = `Hola, ${currentUser.name}`;
-    if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name}! Sistema Completo Listo`;
-    if (xpCount) xpCount.innerText = currentUser.xp || 0;
-    if (streakCount) streakCount.innerText = currentUser.streak || 1;
-
-    renderLessons();
-    renderCustomWords();
-    renderGlobalChat();
-    renderPrivateChat();
-    renderLiveStream();
-}
-
-// 📚 LECCIONES Y PRÁCTICAS
-function getUnseenItems(categoryFilter) {
-    if (!currentUser.seenHistory) currentUser.seenHistory = [];
-    let history = currentUser.seenHistory;
-    let available = MASSIVE_VOCABULARY_BANK.filter(item => item.category === categoryFilter && !history.includes(item.en || item.q));
-
-    if (available.length < 2) {
-        currentUser.seenHistory = currentUser.seenHistory.filter(key => {
-            const item = MASSIVE_VOCABULARY_BANK.find(i => (i.en || i.q) === key);
-            return item && item.category !== categoryFilter;
-        });
-        saveCurrentUserData();
-        available = MASSIVE_VOCABULARY_BANK.filter(item => item.category === categoryFilter);
-    }
-    return available.sort(() => 0.5 - Math.random());
-}
-
-function renderLessons() {
-    const container = document.getElementById('sec-lessons');
-    if (!container) return;
-    const categories = [
-        { id: 'cat-basic', title: 'Vocabulario Básico', category: 'Básico', icon: 'fa-hand-wave' },
-        { id: 'cat-work', title: 'Trabajo y Tecnología', category: 'Trabajo', icon: 'fa-laptop-code' },
-        { id: 'cat-travel', title: 'Viajes y Restaurantes', category: 'Viajes', icon: 'fa-plane-departure' },
-        { id: 'cat-adv', title: 'Inglés Avanzado', category: 'Avanzado', icon: 'fa-brain' }
-    ];
-
-    let html = `
-        <div class="col-span-full bg-gradient-to-r from-rose-600 via-red-600 to-orange-600 rounded-3xl p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between">
-            <div class="mb-4 sm:mb-0">
-                <span class="px-3 py-1 bg-white/25 backdrop-blur-md rounded-full text-xs font-bold uppercase">¡Modo Duelo 1vs1!</span>
-                <h3 class="text-2xl font-black mt-2">⚔️ Guerra de Inglés con Micrófono</h3>
-                <p class="text-xs text-rose-100 mt-1">15 Preguntas aleatorias de un banco de 100+ fotos y 10s por turno.</p>
-            </div>
-            <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition transform active:scale-95 shrink-0">
-                ¡Lanzar Batalla! ⚔️
-            </button>
-        </div>
-    `;
-
-    html += categories.map(cat => `
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 transition shadow-sm flex flex-col justify-between">
-            <div>
-                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center text-xl mb-3">
-                    <i class="fa-solid ${cat.icon}"></i>
-                </div>
-                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">${cat.category}</span>
-                <h3 class="font-bold text-lg text-slate-800 dark:text-white mt-1">${cat.title}</h3>
-            </div>
-            <button data-category="${cat.category}" class="btn-start-dynamic mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md">
-                Iniciar Práctica
-            </button>
-        </div>
-    `).join('');
-
-    container.innerHTML = html;
-
-    container.querySelectorAll('.btn-start-dynamic').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const cat = e.currentTarget.getAttribute('data-category');
-            currentLesson = { title: `Práctica ${cat}`, items: getUnseenItems(cat).slice(0, 5) };
-            currentStepIndex = 0;
-            document.getElementById('view-lesson-modal').classList.remove('hidden');
-            renderCurrentStep();
-        });
-    });
-}
-
-function renderCurrentStep() {
-    const step = currentLesson.items[currentStepIndex];
-    const container = document.getElementById('lesson-content');
-    const total = currentLesson.items.length;
-
-    const itemKey = step.en || step.q;
-    if (step && currentUser && !currentUser.seenHistory.includes(itemKey)) {
-        currentUser.seenHistory.push(itemKey);
-        saveCurrentUserData();
-    }
-
-    document.getElementById('lesson-counter').innerText = `${currentStepIndex + 1}/${total}`;
-    document.getElementById('lesson-progress').style.width = `${((currentStepIndex + 1) / total) * 100}%`;
-
-    if (step.type === 'card') {
-        container.innerHTML = `
-            <div class="perspective-1000 max-w-sm mx-auto space-y-4 w-full">
-                <div id="card-flip" class="transform-style-3d relative w-full h-64 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-3xl p-6 flex flex-col justify-between cursor-pointer shadow-2xl">
-                    <div class="flex justify-between items-center text-xs opacity-80"><span>Voltear</span><i class="fa-solid fa-rotate"></i></div>
-                    <div class="text-center my-auto">
-                        <h2 class="text-2xl font-extrabold mb-1">${step.en}</h2>
-                        <p class="text-xs text-indigo-200 italic font-mono">[${step.phonetic}]</p>
-                        <div class="flex justify-center space-x-2 mt-4">
-                            <button id="btn-speak-card" class="px-3 py-1.5 bg-white/20 rounded-full text-xs font-bold hover:bg-white/30 transition"><i class="fa-solid fa-volume-high mr-1"></i> Audio</button>
-                            <button id="btn-mic-card" class="px-3 py-1.5 bg-rose-500 rounded-full text-xs font-bold hover:bg-rose-600 transition"><i class="fa-solid fa-microphone mr-1"></i> Probar Voz</button>
-                        </div>
-                    </div>
-                    <div class="absolute inset-0 bg-slate-800 text-white rounded-3xl p-6 flex flex-col justify-center items-center rotate-y-180 backface-hidden border border-indigo-500">
-                        <span class="text-xs text-slate-400 mb-2">Traducción al Español:</span>
-                        <h3 class="text-2xl font-bold text-amber-400 text-center">${step.es}</h3>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.getElementById('card-flip').addEventListener('click', (e) => {
-            if (!e.target.closest('#btn-speak-card') && !e.target.closest('#btn-mic-card')) {
-                e.currentTarget.classList.toggle('rotate-y-180');
-            }
-        });
-        document.getElementById('btn-speak-card').onclick = (e) => { e.stopPropagation(); speakText(step.en); };
-        document.getElementById('btn-mic-card').onclick = (e) => {
-            e.stopPropagation();
-            startSpeechRecognition((text) => {
-                const spoken = text.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
-                const target = step.en.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
-                if (spoken === target || target.includes(spoken) || spoken.includes(target)) {
-                    showToast(`🎉 ¡Excelente! Dijiste: "${text}"`, 'success');
-                    currentUser.xp = (currentUser.xp || 0) + 5;
-                    saveCurrentUserData();
-                    updateUI();
-                } else {
-                    showToast(`❌ Casi. Dijiste: "${text}"`, 'info');
-                }
-            }, 'en-US');
-        };
-        speakText(step.en);
-    } else if (step.type === 'quiz') {
-        container.innerHTML = `
-            <div class="max-w-md mx-auto text-center space-y-6 w-full">
-                <h3 class="text-xl font-bold text-white">${step.q}</h3>
-                <div class="space-y-3">
-                    ${step.options.map((opt, idx) => `
-                        <button onclick="checkQuizAnswer(${idx}, ${step.correct})" class="quiz-opt-btn w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl border border-slate-700 transition text-left text-sm flex items-center justify-between">
-                            <span>${opt}</span>
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-}
-
-window.checkQuizAnswer = function(selectedIdx, correctIdx) {
-    const buttons = document.querySelectorAll('.quiz-opt-btn');
-    buttons.forEach((btn, idx) => {
-        btn.onclick = null;
-        if (idx === correctIdx) btn.classList.add('bg-emerald-600', 'border-emerald-500');
-        else if (idx === selectedIdx) btn.classList.add('bg-rose-600', 'border-rose-500');
-    });
-    if (selectedIdx === correctIdx) {
-        showToast('🎉 ¡Correcto! +5 XP', 'success');
-        currentUser.xp = (currentUser.xp || 0) + 5;
-        saveCurrentUserData();
-        updateUI();
-    } else {
-        showToast('❌ Incorrecto', 'info');
-    }
-};
-
-function speakText(text) {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
-// ==========================================
-// CHAT GLOBAL
-// ==========================================
-function renderGlobalChat() {
-    const secChat = document.getElementById('sec-chat');
-    if (!secChat) return;
-    secChat.innerHTML = `
-        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col h-[500px]">
-            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
-                    <h3 class="font-bold text-slate-800 dark:text-white">Sala Global (Firebase Nube)</h3>
-                </div>
-            </div>
-            <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
-            <form id="chat-send-form" class="p-3 border-t border-slate-200 dark:border-slate-700 flex space-x-2">
-                <input type="text" id="chat-input-text" placeholder="Escribe un mensaje..." required class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-xs text-slate-800 dark:text-white outline-none">
-                <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('chat-input-text').value = txt, 'es-ES')" class="bg-slate-700 text-white px-3 py-2.5 rounded-xl text-xs"><i class="fa-solid fa-microphone"></i></button>
-                <button type="submit" class="bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs">Enviar</button>
-            </form>
-        </div>
-    `;
-
-    if (db) {
-        db.collection('globalChat').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-            let html = '';
-            snapshot.forEach(doc => {
-                const msg = doc.data();
-                html += `
-                    <div class="flex items-start space-x-2">
-                        <div class="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0">${msg.sender ? msg.sender.charAt(0) : 'U'}</div>
-                        <div class="bg-slate-900 p-3 rounded-2xl max-w-xs sm:max-w-md">
-                            <span class="text-xs font-extrabold text-indigo-400">${msg.sender}</span>
-                            <p class="text-xs text-slate-200">${msg.text}</p>
-                        </div>
-                    </div>
-                `;
-            });
-            const container = document.getElementById('chat-messages-container');
-            if (container) {
-                container.innerHTML = html || '<p class="text-xs text-center text-slate-400">Sé el primero en escribir.</p>';
-                container.scrollTop = container.scrollHeight;
-            }
-        });
-    }
-
-    document.getElementById('chat-send-form').onsubmit = (e) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input-text');
-        const text = input.value.trim();
-        if (!text) return;
-
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        if (db) {
-            db.collection('globalChat').add({
-                sender: currentUser ? currentUser.name : 'Meyer',
-                text, time: timeStr, xp: currentUser ? currentUser.xp : 0,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => { input.value = ''; });
-        }
-    };
-}
-
-// ==========================================
-// TRANSMISIONES EN VIVO (CON EMPAREJAMIENTO ALEATORIO Y CONTROL PRENDER/APAGAR)
+// TRANSMISIONES EN VIVO (CONTROLES COMPLETOS Y MULTIDISPOSITIVO)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -851,6 +547,21 @@ function renderLiveStream() {
                         <video id="live-video-player" autoplay playsinline class="w-full h-full object-cover rounded-xl"></video>
                         <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
+
+                    <div class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2 flex-wrap gap-1">
+                        <button onclick="toggleDuoMute()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                            <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
+                        </button>
+                        <button onclick="toggleDuoPauseCam()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                            <i class="fa-solid fa-video"></i><span>Pausar</span>
+                        </button>
+                        <button onclick="toggleFlipCamera()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                            <i class="fa-solid fa-camera-rotate"></i><span>Voltear</span>
+                        </button>
+                        <button onclick="toggleHostingLive()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                            <i class="fa-solid fa-phone-slash"></i><span>Apagar / Salir</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-full overflow-hidden">
@@ -877,44 +588,22 @@ window.toggleHostingLive = async function() {
     if (localMediaStream) {
         localMediaStream.getTracks().forEach(track => track.stop());
         localMediaStream = null;
-
         const mainPlayer = document.getElementById('live-video-player');
         if (mainPlayer) mainPlayer.srcObject = null;
-
-        const guestPlayer = document.getElementById('live-guest-player');
-        if (guestPlayer) {
-            guestPlayer.srcObject = null;
-            guestPlayer.classList.add('hidden');
-        }
-
         if (peer) { peer.destroy(); peer = null; }
-
-        if (db) {
-            db.collection('liveRooms').doc(myRoomId).delete().catch(() => {});
-        }
-
+        if (db) db.collection('liveRooms').doc(myRoomId).delete().catch(() => {});
         if (btn) {
             btn.innerText = "Transmitir Mi Cámara 📹";
             btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
         }
         if (btnDuo) btnDuo.classList.add('hidden');
-
-        const badge = document.getElementById('live-status-badge');
-        if (badge) {
-            badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
-            badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10";
-        }
-
         activeLiveRoomId = null;
         showToast('⏹️ Transmisión finalizada y apagada.', 'info');
     } else {
         try {
-            localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
             const mainPlayer = document.getElementById('live-video-player');
-            if (mainPlayer) {
-                mainPlayer.srcObject = localMediaStream;
-                mainPlayer.muted = true;
-            }
+            if (mainPlayer) { mainPlayer.srcObject = localMediaStream; mainPlayer.muted = true; }
 
             if (window.Peer) {
                 peer = new Peer();
@@ -926,8 +615,10 @@ window.toggleHostingLive = async function() {
                         });
                     }
                     activeLiveRoomId = myRoomId;
-                    btn.innerText = "⏹️ Apagar Live";
-                    btn.className = "px-4 py-2 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-xl transition shadow-lg border border-slate-700";
+                    if (btn) {
+                        btn.innerText = "⏹️ Apagar Live";
+                        btn.className = "px-4 py-2 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-xl transition shadow-lg border border-slate-700";
+                    }
                     if (btnDuo) btnDuo.classList.remove('hidden');
 
                     const badge = document.getElementById('live-status-badge');
@@ -935,19 +626,17 @@ window.toggleHostingLive = async function() {
                         badge.innerText = `🔴 EN VIVO (${myName})`;
                         badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
                     }
-
                     connectToLiveChat(myRoomId, myName);
                     showToast('🚀 Tu transmisión en vivo ha comenzado.');
                 });
 
                 peer.on('call', (call) => {
                     call.answer(localMediaStream);
-                    call.on('stream', (guestStream) => {
+                    call.on('stream', (remoteStream) => {
                         const guestPlayer = document.getElementById('live-guest-player');
                         if (guestPlayer) {
-                            guestPlayer.srcObject = guestStream;
+                            guestPlayer.srcObject = remoteStream;
                             guestPlayer.classList.remove('hidden');
-                            showToast('👥 ¡Tu amigo se unió en Dúo!');
                         }
                     });
                 });
@@ -958,12 +647,45 @@ window.toggleHostingLive = async function() {
     }
 };
 
+window.toggleDuoMute = function() {
+    if (localMediaStream) {
+        const audioTrack = localMediaStream.getAudioTracks()[0];
+        if (audioTrack) {
+            audioTrack.enabled = !audioTrack.enabled;
+            showToast(audioTrack.enabled ? '🎙️ Micrófono activado' : '🔇 Micrófono silenciado');
+        }
+    }
+};
+
+window.toggleDuoPauseCam = function() {
+    if (localMediaStream) {
+        const videoTrack = localMediaStream.getVideoTracks()[0];
+        if (videoTrack) {
+            videoTrack.enabled = !videoTrack.enabled;
+            showToast(videoTrack.enabled ? '📹 Cámara reanudada' : '⏸️ Cámara pausada');
+        }
+    }
+};
+
+window.toggleFlipCamera = async function() {
+    facingMode = facingMode === 'user' ? 'environment' : 'user';
+    if (localMediaStream) localMediaStream.getTracks().forEach(track => track.stop());
+    try {
+        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
+        const mainPlayer = document.getElementById('live-video-player');
+        if (mainPlayer) mainPlayer.srcObject = localMediaStream;
+        showToast('📷 Cámara volteada.');
+    } catch (e) {
+        showToast('No se pudo voltear la cámara.', 'error');
+    }
+};
+
 window.inviteFriendToDuo = function() {
-    const friendId = prompt("Ingresa el ID o nombre de tu amigo para invitarlo al Dúo:");
+    const friendId = prompt("Ingresa el ID de tu amigo para invitarlo al Dúo:");
     if (!friendId) return;
     const myName = currentUser ? currentUser.name : 'Meyer';
     if (db && peer) {
-        db.collection('duoInvitations').doc(friendId.toLowerCase().trim()).set({
+        db.collection('duoInvitations').doc(friendId.trim()).set({
             hostName: myName, hostPeerId: peer.id,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => { showToast(`📩 Invitación enviada a ${friendId}`); });
@@ -972,11 +694,11 @@ window.inviteFriendToDuo = function() {
 
 function listenForDuoInvitations() {
     if (!db || !currentUser) return;
-    const myKey = currentUser.name.toLowerCase().trim();
+    const myKey = currentUser.userId;
     db.collection('duoInvitations').doc(myKey).onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
-            if (confirm(`🔔 ${data.hostName} te invitó a transmitir a Dúo. ¿Aceptar?`)) {
+            if (confirm(`🔔 ${data.hostName} te invitó a transmitir en Dúo. ¿Aceptar?`)) {
                 db.collection('duoInvitations').doc(myKey).delete();
                 connectToHostDuo(data.hostPeerId, data.hostName);
             } else {
@@ -988,7 +710,7 @@ function listenForDuoInvitations() {
 
 async function connectToHostDuo(hostPeerId, hostName) {
     try {
-        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
         if (window.Peer) {
             const duoPeer = new Peer();
             duoPeer.on('open', () => {
@@ -1025,6 +747,10 @@ function listenToActiveLiveRooms() {
 }
 
 window.joinRandomLiveRoom = function() {
+    if (!localMediaStream) {
+        showToast('⚠️ Debes encender tu transmisión en vivo primero para usar el emparejamiento aleatorio.', 'info');
+        return;
+    }
     if (!db) return;
     db.collection('liveRooms').get().then(snapshot => {
         if (snapshot.empty) {
@@ -1032,7 +758,14 @@ window.joinRandomLiveRoom = function() {
             return;
         }
         const rooms = [];
-        snapshot.forEach(doc => rooms.push(doc.data()));
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.roomId !== activeLiveRoomId) rooms.push(data);
+        });
+        if (rooms.length === 0) {
+            showToast('No hay otros lives disponibles para emparejar.', 'info');
+            return;
+        }
         const randomRoom = rooms[Math.floor(Math.random() * rooms.length)];
         watchLiveRoom(randomRoom.peerId, randomRoom.hostName, randomRoom.roomId);
         showToast(`🎲 Emparejado con el Live de ${randomRoom.hostName}`);
@@ -1042,14 +775,10 @@ window.joinRandomLiveRoom = function() {
 };
 
 window.watchLiveRoom = function(peerId, hostName, roomId) {
-    if (localMediaStream) {
-        showToast('Apaga tu transmisión antes de ver otro live.', 'info');
-        return;
-    }
     if (window.Peer) {
         const viewerPeer = new Peer();
         viewerPeer.on('open', () => {
-            const call = viewerPeer.call(peerId);
+            const call = viewerPeer.call(peerId, localMediaStream || new MediaStream());
             call.on('stream', (remoteStream) => {
                 const player = document.getElementById('live-video-player');
                 if (player) { player.srcObject = remoteStream; player.muted = false; }
@@ -1098,8 +827,260 @@ function connectToLiveChat(roomId, hostName) {
 }
 
 // ==========================================
-// DICCIONARIO PERSONAL
+// UTILIDADES, AUTENTICACIÓN Y UI GENERAL
 // ==========================================
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-indigo-600');
+    toast.className = `toast-item ${bgClass} text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-2 text-sm font-semibold pointer-events-auto`;
+    toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-bell'}"></i><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => { toast.remove(); }, 3500);
+}
+
+function startSpeechRecognition(callback, lang = 'en-US') {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showToast('Tu navegador no soporta entrada de voz.', 'info');
+        return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = lang;
+    recognition.interimResults = false;
+    showToast('🎙️ Escuchando... Habla ahora', 'info');
+
+    recognition.onresult = (event) => { callback(event.results[0][0].transcript); };
+    recognition.onerror = () => { showToast('No se logró escuchar claramente.', 'info'); };
+    recognition.start();
+}
+
+function getUsersDB() { return JSON.parse(localStorage.getItem('meyer_app_users_db')) || {}; }
+function saveUsersDB(data) { localStorage.setItem('meyer_app_users_db', JSON.stringify(data)); }
+function saveCurrentUserData() {
+    if (!currentUser) return;
+    const data = getUsersDB();
+    data[currentUser.email] = currentUser;
+    saveUsersDB(data);
+    localStorage.setItem('meyer_app_active_email', currentUser.email);
+}
+
+function initAuth() {
+    const activeEmail = localStorage.getItem('meyer_app_active_email');
+    const data = getUsersDB();
+    if (activeEmail && data[activeEmail]) {
+        currentUser = data[activeEmail];
+        showMainApp();
+    } else { showAuthModal(); }
+}
+
+function showAuthModal() {
+    const modal = document.getElementById('auth-modal');
+    const dash = document.getElementById('view-dashboard');
+    if (modal) modal.classList.remove('hidden');
+    if (dash) dash.classList.add('hidden');
+}
+
+function showMainApp() {
+    const modal = document.getElementById('auth-modal');
+    const dash = document.getElementById('view-dashboard');
+    const logoutBtn = document.getElementById('btn-logout');
+    if (modal) modal.classList.add('hidden');
+    if (dash) dash.classList.remove('hidden');
+    if (logoutBtn) logoutBtn.classList.remove('hidden');
+    updateUI();
+}
+
+function updateUI() {
+    if (!currentUser) return;
+    const welcomeHeader = document.getElementById('header-user-welcome');
+    const welcomeTitle = document.getElementById('welcome-title');
+    const xpCount = document.getElementById('xp-count');
+    const streakCount = document.getElementById('streak-count');
+
+    if (welcomeHeader) welcomeHeader.innerText = `Hola, ${currentUser.name}`;
+    if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name}! Sistema Completo Listo`;
+    if (xpCount) xpCount.innerText = currentUser.xp || 0;
+    if (streakCount) streakCount.innerText = currentUser.streak || 1;
+
+    renderLessons();
+    renderCustomWords();
+    renderGlobalChat();
+    renderPrivateChat();
+    renderLiveStream();
+}
+
+// 📚 LECCIONES
+function getUnseenItems(categoryFilter) {
+    if (!currentUser.seenHistory) currentUser.seenHistory = [];
+    let history = currentUser.seenHistory;
+    let available = MASSIVE_VOCABULARY_BANK.filter(item => item.category === categoryFilter && !history.includes(item.en || item.q));
+    if (available.length < 2) {
+        currentUser.seenHistory = [];
+        saveCurrentUserData();
+        available = MASSIVE_VOCABULARY_BANK.filter(item => item.category === categoryFilter);
+    }
+    return available.sort(() => 0.5 - Math.random());
+}
+
+function renderLessons() {
+    const container = document.getElementById('sec-lessons');
+    if (!container) return;
+    const categories = [
+        { id: 'cat-basic', title: 'Vocabulario Básico', category: 'Básico', icon: 'fa-hand-wave' },
+        { id: 'cat-work', title: 'Trabajo y Tecnología', category: 'Trabajo', icon: 'fa-laptop-code' },
+        { id: 'cat-travel', title: 'Viajes y Restaurantes', category: 'Viajes', icon: 'fa-plane-departure' },
+        { id: 'cat-adv', title: 'Inglés Avanzado', category: 'Avanzado', icon: 'fa-brain' }
+    ];
+
+    let html = `
+        <div class="col-span-full bg-gradient-to-r from-rose-600 via-red-600 to-orange-600 rounded-3xl p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between">
+            <div class="mb-4 sm:mb-0">
+                <span class="px-3 py-1 bg-white/25 backdrop-blur-md rounded-full text-xs font-bold uppercase">¡Modo Duelo 1vs1!</span>
+                <h3 class="text-2xl font-black mt-2">⚔️ Guerra de Inglés con Micrófono</h3>
+                <p class="text-xs text-rose-100 mt-1">15 Preguntas variadas sin repetición y 10s por turno.</p>
+            </div>
+            <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition transform active:scale-95 shrink-0">
+                ¡Lanzar Batalla! ⚔️
+            </button>
+        </div>
+    `;
+
+    html += categories.map(cat => `
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 transition shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center text-xl mb-3">
+                    <i class="fa-solid ${cat.icon}"></i>
+                </div>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">${cat.category}</span>
+                <h3 class="font-bold text-lg text-slate-800 dark:text-white mt-1">${cat.title}</h3>
+            </div>
+            <button data-category="${cat.category}" class="btn-start-dynamic mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md">
+                Iniciar Práctica
+            </button>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.btn-start-dynamic').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const cat = e.currentTarget.getAttribute('data-category');
+            currentLesson = { title: `Práctica ${cat}`, items: getUnseenItems(cat).slice(0, 5) };
+            currentStepIndex = 0;
+            document.getElementById('view-lesson-modal').classList.remove('hidden');
+            renderCurrentStep();
+        });
+    });
+}
+
+function renderCurrentStep() {
+    const step = currentLesson.items[currentStepIndex];
+    const container = document.getElementById('lesson-content');
+    const total = currentLesson.items.length;
+
+    document.getElementById('lesson-counter').innerText = `${currentStepIndex + 1}/${total}`;
+    document.getElementById('lesson-progress').style.width = `${((currentStepIndex + 1) / total) * 100}%`;
+
+    if (step.type === 'card') {
+        container.innerHTML = `
+            <div class="perspective-1000 max-w-sm mx-auto space-y-4 w-full">
+                <div id="card-flip" class="transform-style-3d relative w-full h-64 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-3xl p-6 flex flex-col justify-between cursor-pointer shadow-2xl">
+                    <div class="text-center my-auto">
+                        <h2 class="text-2xl font-extrabold mb-1">${step.en}</h2>
+                        <p class="text-xs text-indigo-200 italic font-mono">[${step.phonetic}]</p>
+                        <div class="flex justify-center space-x-2 mt-4">
+                            <button id="btn-speak-card" class="px-3 py-1.5 bg-white/20 rounded-full text-xs font-bold">Audio</button>
+                            <button id="btn-mic-card" class="px-3 py-1.5 bg-rose-500 rounded-full text-xs font-bold">Probar Voz</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('btn-speak-card').onclick = (e) => { e.stopPropagation(); speakText(step.en); };
+        document.getElementById('btn-mic-card').onclick = (e) => {
+            e.stopPropagation();
+            startSpeechRecognition((text) => {
+                showToast(`🎉 ¡Excelente! Dijiste: "${text}"`, 'success');
+                currentUser.xp = (currentUser.xp || 0) + 5;
+                saveCurrentUserData();
+                updateUI();
+            }, 'en-US');
+        };
+        speakText(step.en);
+    } else if (step.type === 'quiz') {
+        container.innerHTML = `
+            <div class="max-w-md mx-auto text-center space-y-6 w-full">
+                <h3 class="text-xl font-bold text-white">${step.q}</h3>
+                <div class="space-y-3">
+                    ${step.options.map((opt, idx) => `
+                        <button onclick="checkQuizAnswer(${idx}, ${step.correct})" class="quiz-opt-btn w-full py-3.5 px-4 bg-slate-800 text-white font-semibold rounded-xl">${opt}</button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+}
+
+window.checkQuizAnswer = function(selectedIdx, correctIdx) {
+    if (selectedIdx === correctIdx) {
+        showToast('🎉 ¡Correcto! +5 XP', 'success');
+        currentUser.xp = (currentUser.xp || 0) + 5;
+        saveCurrentUserData();
+        updateUI();
+    } else {
+        showToast('❌ Incorrecto', 'info');
+    }
+};
+
+function speakText(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+function renderGlobalChat() {
+    const secChat = document.getElementById('sec-chat');
+    if (!secChat) return;
+    secChat.innerHTML = `
+        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col h-[500px]">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white">Sala Global (Firebase Nube)</div>
+            <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto space-y-3"></div>
+            <form id="chat-send-form" class="p-3 border-t border-slate-200 dark:border-slate-700 flex space-x-2">
+                <input type="text" id="chat-input-text" placeholder="Escribe un mensaje..." required class="flex-1 px-4 py-2.5 rounded-xl border dark:bg-slate-900 text-xs text-white outline-none">
+                <button type="submit" class="bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs">Enviar</button>
+            </form>
+        </div>
+    `;
+    if (db) {
+        db.collection('globalChat').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+            let html = '';
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                html += `<div class="bg-slate-900 p-2 rounded-xl text-xs"><b class="text-indigo-400">${msg.sender}:</b> ${msg.text}</div>`;
+            });
+            const container = document.getElementById('chat-messages-container');
+            if (container) { container.innerHTML = html; container.scrollTop = container.scrollHeight; }
+        });
+    }
+    document.getElementById('chat-send-form').onsubmit = (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input-text');
+        const text = input.value.trim();
+        if (!text) return;
+        if (db) {
+            db.collection('globalChat').add({
+                sender: currentUser ? currentUser.name : 'Meyer',
+                text, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => { input.value = ''; });
+        }
+    };
+}
+
 function renderCustomWords() {
     const container = document.getElementById('custom-words-list');
     if (!container) return;
@@ -1108,15 +1089,9 @@ function renderCustomWords() {
         return;
     }
     container.innerHTML = currentUser.customWords.map(w => `
-        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center shadow-sm">
-            <div>
-                <b class="text-slate-800 dark:text-white">${w.en}</b>
-                <div class="text-xs text-slate-500">${w.es}</div>
-            </div>
-            <div class="flex space-x-1">
-                <button onclick="speakText('${w.en}')" class="text-indigo-500 text-xs p-2"><i class="fa-solid fa-volume-high"></i></button>
-                <button onclick="deleteCustomWord(${w.id})" class="text-rose-500 text-xs p-2"><i class="fa-solid fa-trash"></i></button>
-            </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border flex justify-between items-center">
+            <div><b class="text-white">${w.en}</b><div class="text-xs text-slate-500">${w.es}</div></div>
+            <button onclick="deleteCustomWord(${w.id})" class="text-rose-500 text-xs p-2"><i class="fa-solid fa-trash"></i></button>
         </div>
     `).join('');
 }
@@ -1128,17 +1103,12 @@ window.deleteCustomWord = function(id) {
     showToast('Frase eliminada.', 'info');
 };
 
-// ==========================================
-// INICIALIZACIÓN DE EVENTOS Y PESTAÑAS
-// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     initAuth();
 
     const themeToggleBtn = document.getElementById('theme-toggle');
     if (themeToggleBtn) {
-        themeToggleBtn.onclick = () => {
-            document.documentElement.classList.toggle('dark');
-        };
+        themeToggleBtn.onclick = () => { document.documentElement.classList.toggle('dark'); };
     }
 
     const toggleAuthBtn = document.getElementById('btn-toggle-auth');
@@ -1156,20 +1126,35 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = document.getElementById('input-email').value.trim().toLowerCase();
             const password = document.getElementById('input-password').value;
-            const name = document.getElementById('input-name').value.trim() || 'Meyer';
+            const nameInput = document.getElementById('input-name');
             const data = getUsersDB();
 
-            currentUser = data[email] || { 
-                email, password, name, xp: 50, streak: 1, 
-                userId: 'USER_' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-                customWords: [], seenHistory: [], friends: [] 
-            };
-            if (!currentUser.seenHistory) currentUser.seenHistory = [];
-            if (!currentUser.friends) currentUser.friends = [];
-            if (!currentUser.userId) currentUser.userId = 'USER_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            saveCurrentUserData();
-            showMainApp();
+            if (isRegistering) {
+                const name = nameInput ? nameInput.value.trim() : 'Meyer';
+                if (!name) { showToast('Ingresa tu nombre.', 'error'); return; }
+                const userId = name.toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+                currentUser = { 
+                    email, password, name, userId, xp: 50, streak: 1, 
+                    customWords: [], seenHistory: [], friends: [] 
+                };
+                data[email] = currentUser;
+                saveUsersDB(data);
+                saveCurrentUserData();
+                showToast('✅ Cuenta creada con éxito.');
+                showMainApp();
+            } else {
+                if (!data[email] || data[email].password !== password) {
+                    showToast('❌ Error: Cuenta no registrada o contraseña incorrecta. Regístrate primero.', 'error');
+                    return;
+                }
+                currentUser = data[email];
+                if (!currentUser.userId) {
+                    currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_ID';
+                }
+                saveCurrentUserData();
+                showMainApp();
+            }
         };
     }
 
@@ -1230,11 +1215,3 @@ function switchTab(tab) {
         if (tabBtn) tabBtn.classList.toggle('active', t === tab);
     });
 }
-
-window.addEventListener('beforeunload', () => {
-    if (localMediaStream && currentUser) {
-        const myName = currentUser.name || 'Meyer';
-        const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
-        if (db) db.collection('liveRooms').doc(myRoomId).delete();
-    }
-});
