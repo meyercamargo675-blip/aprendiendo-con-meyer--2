@@ -32,7 +32,7 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'card', en: 'You are welcome', es: 'De nada', phonetic: 'Iu ar uelcom', category: 'Básico' },
     { type: 'card', en: 'See you tomorrow', es: 'Nos vemos mañana', phonetic: 'Si iu tumorou', category: 'Básico' },
     { type: 'quiz', q: '¿Cómo dices "Encantado de conocerte"?', options: ['Nice to meet you', 'Good morning', 'See you later'], correct: 0, category: 'Básico' },
-    { type: 'quiz', q: '¿Qué significa "How are you?"', options: ['¿Cómo estás?', '¿De dónde eres?', '¿Cuál estu nombre?'], correct: 0, category: 'Básico' },
+    { type: 'quiz', q: '¿Qué significa "How are you?"', options: ['¿Cómo estás?', '¿De dónde eres?', '¿Cuál es tu nombre?'], correct: 0, category: 'Básico' },
 
     { type: 'card', en: 'Web Application Development', es: 'Desarrollo de Aplicaciones Web', phonetic: 'Ueb aplikeishon development', category: 'Trabajo' },
     { type: 'card', en: 'Database Management System', es: 'Sistema de Gestión de Base de Datos', phonetic: 'Deitabeis manadjment sistem', category: 'Trabajo' },
@@ -369,7 +369,7 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO CON SCROLL FLUIDO E ID
+// MÓDULO DE CHAT PRIVADO CON SCROLL FLUIDO E ID CORREGIDO
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
@@ -505,7 +505,7 @@ window.openPrivateChat = function(friendId) {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (CONTROLES COMPLETOS Y MULTIDISPOSITIVO)
+// TRANSMISIONES EN VIVO (CONTROLES PERMANENTES Y CONEXIÓN REAL CORREGIDA)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -548,6 +548,7 @@ function renderLiveStream() {
                         <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
 
+                    <!-- BOTONES DE CONTROL FIJOS QUE NUNCA DESAPARECEN -->
                     <div class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2 flex-wrap gap-1">
                         <button onclick="toggleDuoMute()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
@@ -558,7 +559,7 @@ function renderLiveStream() {
                         <button onclick="toggleFlipCamera()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-camera-rotate"></i><span>Voltear</span>
                         </button>
-                        <button onclick="toggleHostingLive()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                        <button onclick="stopLiveHostingSafely()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-phone-slash"></i><span>Apagar / Salir</span>
                         </button>
                     </div>
@@ -580,89 +581,104 @@ function renderLiveStream() {
 }
 
 window.toggleHostingLive = async function() {
+    if (localMediaStream) {
+        stopLiveHostingSafely();
+        return;
+    }
+
     const btn = document.getElementById('btn-toggle-live');
     const btnDuo = document.getElementById('btn-invite-duo');
     const myName = currentUser ? currentUser.name : 'Meyer';
     const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
 
+    try {
+        localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
+        const mainPlayer = document.getElementById('live-video-player');
+        if (mainPlayer) { 
+            mainPlayer.srcObject = localMediaStream; 
+            mainPlayer.muted = true; 
+        }
+
+        if (window.Peer) {
+            peer = new Peer();
+            peer.on('open', (peerId) => {
+                if (db) {
+                    db.collection('liveRooms').doc(myRoomId).set({
+                        roomId: myRoomId, peerId: peerId, hostName: myName,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                activeLiveRoomId = myRoomId;
+                if (btn) {
+                    btn.innerText = "⏹️ En Vivo Activo";
+                    btn.className = "px-4 py-2 bg-emerald-600 font-bold text-xs rounded-xl shadow-lg";
+                }
+                if (btnDuo) btnDuo.classList.remove('hidden');
+
+                const badge = document.getElementById('live-status-badge');
+                if (badge) {
+                    badge.innerText = `🔴 EN VIVO (${myName})`;
+                    badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
+                }
+                connectToLiveChat(myRoomId, myName);
+                showToast('🚀 Tu transmisión en vivo ha comenzado.');
+            });
+
+            // RESPUESTA AUTOMÁTICA A OTROS CELULARES QUE SE CONECTEN A TU LIVE
+            peer.on('call', (call) => {
+                call.answer(localMediaStream);
+                call.on('stream', (remoteStream) => {
+                    const guestPlayer = document.getElementById('live-guest-player');
+                    if (guestPlayer) {
+                        guestPlayer.srcObject = remoteStream;
+                        guestPlayer.classList.remove('hidden');
+                    }
+                });
+            });
+        }
+    } catch (e) {
+        showToast('Error de acceso a cámara o micrófono.', 'error');
+    }
+};
+
+window.stopLiveHostingSafely = function() {
     if (localMediaStream) {
         localMediaStream.getTracks().forEach(track => track.stop());
         localMediaStream = null;
-        const mainPlayer = document.getElementById('live-video-player');
-        if (mainPlayer) mainPlayer.srcObject = null;
-        
-        const guestPlayer = document.getElementById('live-guest-player');
-        if (guestPlayer) {
-            guestPlayer.srcObject = null;
-            guestPlayer.classList.add('hidden');
-        }
-
-        if (peer) { peer.destroy(); peer = null; }
-        if (db) db.collection('liveRooms').doc(myRoomId).delete().catch(() => {});
-        
-        if (btn) {
-            btn.innerText = "Transmitir Mi Cámara 📹";
-            btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
-        }
-        if (btnDuo) btnDuo.classList.add('hidden');
-
-        const badge = document.getElementById('live-status-badge');
-        if (badge) {
-            badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
-            badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10";
-        }
-
-        activeLiveRoomId = null;
-        showToast('⏹️ Transmisión finalizada y apagada.', 'info');
-    } else {
-        try {
-            localMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
-            const mainPlayer = document.getElementById('live-video-player');
-            if (mainPlayer) { 
-                mainPlayer.srcObject = localMediaStream; 
-                mainPlayer.muted = true; 
-            }
-
-            if (window.Peer) {
-                peer = new Peer();
-                peer.on('open', (peerId) => {
-                    if (db) {
-                        db.collection('liveRooms').doc(myRoomId).set({
-                            roomId: myRoomId, peerId: peerId, hostName: myName,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                    activeLiveRoomId = myRoomId;
-                    if (btn) {
-                        btn.innerText = "⏹️ Apagar Live";
-                        btn.className = "px-4 py-2 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-xl transition shadow-lg border border-slate-700";
-                    }
-                    if (btnDuo) btnDuo.classList.remove('hidden');
-
-                    const badge = document.getElementById('live-status-badge');
-                    if (badge) {
-                        badge.innerText = `🔴 EN VIVO (${myName})`;
-                        badge.className = "absolute top-3 left-3 bg-rose-600 text-white font-black text-[11px] px-3 py-1 rounded-full z-10 animate-pulse";
-                    }
-                    connectToLiveChat(myRoomId, myName);
-                    showToast('🚀 Tu transmisión en vivo ha comenzado.');
-                });
-
-                peer.on('call', (call) => {
-                    call.answer(localMediaStream);
-                    call.on('stream', (remoteStream) => {
-                        const guestPlayer = document.getElementById('live-guest-player');
-                        if (guestPlayer) {
-                            guestPlayer.srcObject = remoteStream;
-                            guestPlayer.classList.remove('hidden');
-                        }
-                    });
-                });
-            }
-        } catch (e) {
-            showToast('Error de acceso a cámara o micrófono.', 'info');
-        }
     }
+    const mainPlayer = document.getElementById('live-video-player');
+    if (mainPlayer) mainPlayer.srcObject = null;
+    
+    const guestPlayer = document.getElementById('live-guest-player');
+    if (guestPlayer) {
+        guestPlayer.srcObject = null;
+        guestPlayer.classList.add('hidden');
+    }
+
+    if (peer) { peer.destroy(); peer = null; }
+
+    if (db && currentUser) {
+        const myName = currentUser.name || 'Meyer';
+        const myRoomId = `live_${myName.toLowerCase().replace(/\s+/g, '')}`;
+        db.collection('liveRooms').doc(myRoomId).delete().catch(() => {});
+    }
+
+    const btn = document.getElementById('btn-toggle-live');
+    if (btn) {
+        btn.innerText = "Transmitir Mi Cámara 📹";
+        btn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 font-bold text-xs rounded-xl transition shadow-lg";
+    }
+    const btnDuo = document.getElementById('btn-invite-duo');
+    if (btnDuo) btnDuo.classList.add('hidden');
+
+    const badge = document.getElementById('live-status-badge');
+    if (badge) {
+        badge.innerText = "SIN TRANSMISIÓN SELECCIONADA";
+        badge.className = "absolute top-3 left-3 bg-slate-950/80 text-slate-400 font-bold text-[11px] px-3 py-1 rounded-full z-10";
+    }
+
+    activeLiveRoomId = null;
+    showToast('⏹️ Transmisión finalizada y apagada.', 'info');
 };
 
 window.toggleDuoMute = function() {
@@ -672,6 +688,8 @@ window.toggleDuoMute = function() {
             audioTrack.enabled = !audioTrack.enabled;
             showToast(audioTrack.enabled ? '🎙️ Micrófono activado' : '🔇 Micrófono silenciado');
         }
+    } else {
+        showToast('No estás transmitiendo ningún audio.', 'info');
     }
 };
 
@@ -682,6 +700,8 @@ window.toggleDuoPauseCam = function() {
             videoTrack.enabled = !videoTrack.enabled;
             showToast(videoTrack.enabled ? '📹 Cámara reanudada' : '⏸️ Cámara pausada');
         }
+    } else {
+        showToast('No estás transmitiendo ninguna cámara.', 'info');
     }
 };
 
@@ -746,7 +766,7 @@ async function connectToHostDuo(hostPeerId, hostName) {
             });
         }
     } catch (e) {
-        showToast('Error de cámara para el Dúo.', 'info');
+        showToast('Error de cámara para el Dúo.', 'error');
     }
 }
 
@@ -800,7 +820,8 @@ window.watchLiveRoom = function(peerId, hostName, roomId) {
     if (window.Peer) {
         const viewerPeer = new Peer();
         viewerPeer.on('open', () => {
-            const call = viewerPeer.call(peerId, localMediaStream || new MediaStream());
+            const emptyStream = new MediaStream();
+            const call = viewerPeer.call(peerId, localMediaStream || emptyStream);
             call.on('stream', (remoteStream) => {
                 const player = document.getElementById('live-video-player');
                 if (player) { 
@@ -896,6 +917,9 @@ function initAuth() {
     const data = getUsersDB();
     if (activeEmail && data[activeEmail]) {
         currentUser = data[activeEmail];
+        if (!currentUser.userId) {
+            currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_ID';
+        }
         showMainApp();
     } else { showAuthModal(); }
 }
