@@ -369,11 +369,17 @@ function finishBattleMatch() {
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO CON SCROLL FLUIDO E ID CORREGIDO
+// MÓDULO DE CHAT PRIVADO CON SCROLL FLUIDO E ID GENERADO AL INSTANTE
 // ==========================================
 function renderPrivateChat() {
     const secPrivate = document.getElementById('sec-private-chat');
     if (!secPrivate) return;
+
+    // Asegurar que si el ID no existe por alguna razón antigua, se cree inmediatamente con su nombre
+    if (currentUser && !currentUser.userId) {
+        currentUser.userId = (currentUser.name || 'MEYER').toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        saveCurrentUserData();
+    }
 
     secPrivate.innerHTML = `
         <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid lg:grid-cols-3 gap-4 p-4 h-[520px]">
@@ -394,7 +400,7 @@ function renderPrivateChat() {
             <div class="lg:col-span-2 flex flex-col h-full bg-slate-900/40 rounded-2xl p-3 border border-slate-700">
                 <div class="p-2 border-b border-slate-700 font-bold text-xs text-white flex justify-between items-center">
                     <span id="private-chat-header">💬 Selecciona un chat privado</span>
-                    <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Tu ID: ...</span>
+                    <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Tu ID: ${currentUser ? currentUser.userId : 'Cargando...'}</span>
                 </div>
 
                 <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-3 my-2 max-h-[360px] min-h-[250px]">
@@ -410,10 +416,6 @@ function renderPrivateChat() {
         </div>
     `;
     renderSavedPrivateContactsList();
-    if (currentUser && currentUser.userId) {
-        const badge = document.getElementById('my-display-id-badge');
-        if (badge) badge.innerText = `Tu ID: ${currentUser.userId}`;
-    }
 }
 
 window.sendFriendRequest = function() {
@@ -505,7 +507,7 @@ window.openPrivateChat = function(friendId) {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (CONTROLES PERMANENTES Y CONEXIÓN REAL CORREGIDA)
+// TRANSMISIONES EN VIVO (BOTONES FIJOS Y CONEXIÓN DE CÁMARA CORREGIDA)
 // ==========================================
 function renderLiveStream() {
     const secLive = document.getElementById('sec-live');
@@ -548,18 +550,18 @@ function renderLiveStream() {
                         <video id="live-guest-player" autoplay playsinline class="w-full h-full object-cover rounded-xl bg-slate-950 hidden"></video>
                     </div>
 
-                    <!-- BOTONES DE CONTROL FIJOS QUE NUNCA DESAPARECEN -->
+                    <!-- BOTONES FIJOS QUE NUNCA DESAPARECEN -->
                     <div class="p-2 bg-slate-950 border-t border-slate-800 flex justify-center space-x-2 flex-wrap gap-1">
-                        <button onclick="toggleDuoMute()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                        <button type="button" onclick="toggleDuoMute()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-microphone"></i><span>Silenciar</span>
                         </button>
-                        <button onclick="toggleDuoPauseCam()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                        <button type="button" onclick="toggleDuoPauseCam()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-video"></i><span>Pausar</span>
                         </button>
-                        <button onclick="toggleFlipCamera()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                        <button type="button" onclick="toggleFlipCamera()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-camera-rotate"></i><span>Voltear</span>
                         </button>
-                        <button onclick="stopLiveHostingSafely()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
+                        <button type="button" onclick="stopLiveHostingSafely()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold rounded-lg transition flex items-center space-x-1">
                             <i class="fa-solid fa-phone-slash"></i><span>Apagar / Salir</span>
                         </button>
                     </div>
@@ -624,7 +626,6 @@ window.toggleHostingLive = async function() {
                 showToast('🚀 Tu transmisión en vivo ha comenzado.');
             });
 
-            // RESPUESTA AUTOMÁTICA A OTROS CELULARES QUE SE CONECTEN A TU LIVE
             peer.on('call', (call) => {
                 call.answer(localMediaStream);
                 call.on('stream', (remoteStream) => {
@@ -689,7 +690,7 @@ window.toggleDuoMute = function() {
             showToast(audioTrack.enabled ? '🎙️ Micrófono activado' : '🔇 Micrófono silenciado');
         }
     } else {
-        showToast('No estás transmitiendo ningún audio.', 'info');
+        showToast('No hay audio activo.', 'info');
     }
 };
 
@@ -701,7 +702,7 @@ window.toggleDuoPauseCam = function() {
             showToast(videoTrack.enabled ? '📹 Cámara reanudada' : '⏸️ Cámara pausada');
         }
     } else {
-        showToast('No estás transmitiendo ninguna cámara.', 'info');
+        showToast('No hay cámara activa.', 'info');
     }
 };
 
@@ -918,7 +919,8 @@ function initAuth() {
     if (activeEmail && data[activeEmail]) {
         currentUser = data[activeEmail];
         if (!currentUser.userId) {
-            currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_ID';
+            currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
+            saveCurrentUserData();
         }
         showMainApp();
     } else { showAuthModal(); }
@@ -1199,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 currentUser = data[email];
                 if (!currentUser.userId) {
-                    currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_ID';
+                    currentUser.userId = currentUser.name.toUpperCase().replace(/\s+/g, '_') + '_' + Math.random().toString(36).substring(2, 6).toUpperCase();
                 }
                 saveCurrentUserData();
                 showMainApp();
