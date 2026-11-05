@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS ESTILO TIKTOK
+// MÓDULO DE VIDEOS ESTILO TIKTOK (OPTIMIZADO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -811,7 +811,7 @@ function renderTikTokSection() {
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Archivo (MP4 / MOV)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Archivo (MP4 corto / Menor a 2MB)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -840,13 +840,19 @@ window.publishLocalTikTokVideo = function() {
     const descInput = document.getElementById('input-video-desc').value.trim();
 
     if (!fileInput.files || fileInput.files.length === 0 || !descInput) {
-        showToast('Selecciona un video y escribe una descripción.', 'error');
+        showToast('Selecciona un video corto y escribe una descripción.', 'error');
         return;
     }
 
     const file = fileInput.files[0];
-    const reader = new FileReader();
 
+    // Validación de peso (Máximo 2MB para evitar bloqueo de la base de datos en la nube)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('⚠️ El video pesa más de 2MB. Sube un video más corto o comprimido.', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
     showToast('⏳ Subiendo video a la nube...', 'info');
 
     reader.onload = async function(e) {
@@ -1207,32 +1213,13 @@ function updateUI() {
     const welcomeTitle = document.getElementById('welcome-title');
     const xpCount = document.getElementById('xp-count');
     const streakCount = document.getElementById('streak-count');
+    const userDisplayId = document.getElementById('user-display-id');
 
     if (welcomeHeader) welcomeHeader.innerText = `Hola, ${currentUser.name || 'Meyer'}`;
     if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name || 'Meyer'}! Sistema Completo Listo`;
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
-
-    document.getElementById('header-top-id-badge')?.remove();
-
-    let cardIdBadge = document.getElementById('card-user-id');
-    if (!cardIdBadge) {
-        const welcomeTextContainer = document.querySelector('#welcome-title')?.parentElement;
-        if (welcomeTextContainer) {
-            const cardBadgeDiv = document.createElement('div');
-            cardBadgeDiv.id = 'card-user-id';
-            cardBadgeDiv.className = 'mt-2 inline-flex';
-            welcomeTextContainer.appendChild(cardBadgeDiv);
-        }
-    }
-    if (document.getElementById('card-user-id')) {
-        document.getElementById('card-user-id').innerHTML = `
-            <span class="text-xs font-mono text-indigo-300 bg-slate-900/80 px-3 py-1 rounded-xl border border-slate-700/80 shadow-inner inline-flex items-center space-x-1.5">
-                <span>Mi ID: <b>${currentUser.userId}</b></span>
-                <button onclick="copyMyUserId('${currentUser.userId}')" class="text-xs text-indigo-400 hover:text-indigo-300 ml-1"><i class="fa-solid fa-copy"></i></button>
-            </span>
-        `;
-    }
+    if (userDisplayId) userDisplayId.innerText = currentUser.userId;
 
     renderLessons();
     renderCustomWords();
