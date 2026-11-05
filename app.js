@@ -86,7 +86,7 @@ function ensureUserUniqueId(userObj) {
 }
 
 // ==========================================
-// MÓDULO DE BATALLA 1VS1
+// MÓDULO DE BATALLA 1VS1 (CORREGIDO Y SIN BUCLES)
 // ==========================================
 let currentBattle = {
     mode: 'random',
@@ -94,6 +94,7 @@ let currentBattle = {
     roomPass: '',
     score: 0,
     rivalScore: 0,
+    rivalName: 'Rival Oculto',
     questionIndex: 0,
     timer: 10,
     timerInterval: null,
@@ -112,7 +113,7 @@ window.openWarSetup = function() {
                 <i class="fa-solid fa-gamepad"></i>
             </div>
             <h3 class="text-2xl font-extrabold text-white">⚔️ Guerra de Inglés 1vs1</h3>
-            <p class="text-xs text-slate-300">15 Preguntas variadas sin repetición, 10s por turno y avatares.</p>
+            <p class="text-xs text-slate-300">15 Preguntas variadas, 10s por turno y emparejamiento inteligente.</p>
             
             <div class="flex justify-center gap-4 py-1">
                 <label class="cursor-pointer flex flex-col items-center">
@@ -133,14 +134,14 @@ window.openWarSetup = function() {
             </div>
 
             <div class="space-y-2 pt-1 text-left">
-                <label class="text-[10px] uppercase font-bold text-slate-400">Nombre de Sala</label>
+                <label class="text-[10px] uppercase font-bold text-slate-400">Nombre de Sala Privada</label>
                 <input type="text" id="war-room-name" placeholder="Ej. SalaMeyer" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold outline-none focus:border-rose-500">
                 <label class="text-[10px] uppercase font-bold text-slate-400">Contraseña de Sala</label>
                 <input type="password" id="war-room-pass" placeholder="Contraseña..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-bold outline-none focus:border-rose-500">
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="startBattleMatch('random')" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">🎲 Modo Aleatorio</button>
+                <button onclick="startBattleMatch('random')" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">🎲 Emparejamiento Rápido</button>
                 <button onclick="startBattleMatch('room')" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">🚪 Crear / Unir Sala</button>
             </div>
         </div>
@@ -168,13 +169,53 @@ window.startBattleMatch = function(mode) {
         saveCurrentUserData();
     }
 
+    if (currentBattle.timerInterval) {
+        clearInterval(currentBattle.timerInterval);
+        currentBattle.timerInterval = null;
+    }
+
+    // Si es modo aleatorio, mostramos pantalla de "Buscando contrincante..."
+    if (mode === 'random') {
+        const container = document.getElementById('lesson-content');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="max-w-md mx-auto text-center space-y-6 py-12 px-4">
+                <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-3xl flex items-center justify-center mx-auto text-2xl animate-spin shadow-lg">
+                    <i class="fa-solid fa-spinner"></i>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-black text-white">Buscando Contribuyente / Rival...</h3>
+                    <p class="text-xs text-slate-300">Conectando con la red global para encontrar un oponente disponible.</p>
+                </div>
+                <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
+                    Cancelar ❌
+                </button>
+            </div>
+        `;
+
+        const possibleRivals = ['Carlos_9X', 'Alex_Dev', 'Maria_Pro', 'Luis_Code', 'Sofia_JS'];
+        currentBattle.rivalName = possibleRivals[Math.floor(Math.random() * possibleRivals.length)];
+
+        setTimeout(() => {
+            // Verificamos que el usuario siga en el modal antes de iniciar
+            const modalCheck = document.getElementById('view-lesson-modal');
+            if (modalCheck && !modalCheck.classList.contains('hidden')) {
+                initActualBattle();
+            }
+        }, 3000);
+    } else {
+        initActualBattle();
+    }
+};
+
+function initActualBattle() {
     currentBattle.score = 0;
     currentBattle.rivalScore = 0;
     currentBattle.questionIndex = 0;
     currentBattle.questions = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random()).slice(0, 15);
-
     renderBattleQuestion();
-};
+}
 
 function renderBattleQuestion() {
     if (currentBattle.questionIndex >= currentBattle.questions.length) {
@@ -196,8 +237,8 @@ function renderBattleQuestion() {
             </div>
 
             <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-2xl border border-slate-700 text-xs font-bold text-white">
-                <div>Tu Avatar (${currentUser?.battleAvatar || '🐺'}): <span class="text-emerald-400">${currentBattle.score} pts</span></div>
-                <div>Rival: <span class="text-rose-400">${currentBattle.rivalScore} pts</span></div>
+                <div>Tu (${currentUser?.battleAvatar || '🐺'}): <span class="text-emerald-400">${currentBattle.score} pts</span></div>
+                <div>Rival (${currentBattle.rivalName}): <span class="text-rose-400">${currentBattle.rivalScore} pts</span></div>
             </div>
 
             <div class="text-center space-y-2">
@@ -223,7 +264,11 @@ function renderBattleQuestion() {
         </div>
     `;
 
-    if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
+    if (currentBattle.timerInterval) {
+        clearInterval(currentBattle.timerInterval);
+        currentBattle.timerInterval = null;
+    }
+
     currentBattle.timerInterval = setInterval(() => {
         currentBattle.timer--;
         const timerEl = document.getElementById('battle-timer');
@@ -231,6 +276,7 @@ function renderBattleQuestion() {
 
         if (currentBattle.timer <= 0) {
             clearInterval(currentBattle.timerInterval);
+            currentBattle.timerInterval = null;
             showToast('⏰ ¡Tiempo agotado!', 'error');
             currentBattle.questionIndex++;
             renderBattleQuestion();
@@ -239,9 +285,12 @@ function renderBattleQuestion() {
 }
 
 window.handleBattleAnswer = function(selectedIdx, correctIdx) {
-    clearInterval(currentBattle.timerInterval);
-    const buttons = document.querySelectorAll('.battle-opt');
+    if (currentBattle.timerInterval) {
+        clearInterval(currentBattle.timerInterval);
+        currentBattle.timerInterval = null;
+    }
 
+    const buttons = document.querySelectorAll('.battle-opt');
     buttons.forEach((btn, idx) => {
         btn.onclick = null;
         if (idx === correctIdx) btn.classList.add('bg-emerald-600', 'border-emerald-500');
@@ -255,7 +304,7 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
         showToast('❌ Incorrecto', 'error');
     }
 
-    if (currentBattle.mode === 'random' && Math.random() > 0.5) {
+    if (currentBattle.mode === 'random' && Math.random() > 0.4) {
         currentBattle.rivalScore += 10;
     }
 
@@ -266,14 +315,20 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
 };
 
 window.exitBattleMatch = function() {
-    if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
+    if (currentBattle.timerInterval) {
+        clearInterval(currentBattle.timerInterval);
+        currentBattle.timerInterval = null;
+    }
     const modal = document.getElementById('view-lesson-modal');
     if (modal) modal.classList.add('hidden');
-    showToast('Batalla finalizada.', 'info');
+    showToast('Batalla finalizada correctamente.', 'info');
 };
 
 function finishBattleMatch() {
-    if (currentBattle.timerInterval) clearInterval(currentBattle.timerInterval);
+    if (currentBattle.timerInterval) {
+        clearInterval(currentBattle.timerInterval);
+        currentBattle.timerInterval = null;
+    }
     const container = document.getElementById('lesson-content');
     if (!container) return;
     const won = currentBattle.score >= currentBattle.rivalScore;
@@ -288,7 +343,7 @@ function finishBattleMatch() {
         <div class="max-w-md mx-auto text-center space-y-6 p-4">
             <div class="text-5xl">${won ? '🏆' : '🤝'}</div>
             <h3 class="text-2xl font-black text-white">${won ? '¡Victoria Épica!' : '¡Buen Combate!'}</h3>
-            <p class="text-xs text-slate-300">Tus puntos: <b>${currentBattle.score}</b> | Puntos del Rival: <b>${currentBattle.rivalScore}</b></p>
+            <p class="text-xs text-slate-300">Tus puntos: <b>${currentBattle.score}</b> | Puntos de ${currentBattle.rivalName}: <b>${currentBattle.rivalScore}</b></p>
             <button onclick="document.getElementById('view-lesson-modal').classList.add('hidden')" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">
                 Finalizar y Reclamar XP 🚀
             </button>
@@ -983,7 +1038,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeLessonBtn = document.getElementById('btn-close-lesson');
     if (closeLessonBtn) {
-        closeLessonBtn.onclick = () => document.getElementById('view-lesson-modal').classList.add('hidden');
+        closeLessonBtn.onclick = () => {
+            if (currentBattle.timerInterval) {
+                clearInterval(currentBattle.timerInterval);
+                currentBattle.timerInterval = null;
+            }
+            document.getElementById('view-lesson-modal').classList.add('hidden');
+        };
     }
 
     const nextStepBtn = document.getElementById('btn-next-step');
