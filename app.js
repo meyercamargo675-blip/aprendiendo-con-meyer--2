@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (HASTA 3 MIN Y 50MB, CON SONIDO)
+// MÓDULO DE VIDEOS GALACTIC (COMPRESIÓN INTELIGENTE + AUDIO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -811,7 +811,7 @@ function renderTikTokSection() {
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Máx 3 Min / Hasta 50MB / Con Sonido)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Con Sonido / Optimización Automática)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -847,74 +847,88 @@ window.publishLocalTikTokVideo = function() {
 
     const file = fileInput.files[0];
 
-    // Límite amplio de 50MB para que cualquier video cargue
-    if (file.size > 50 * 1024 * 1024) {
-        showToast('⚠️ El video pesa más de 50MB. Elige uno un poco más corto.', 'error');
-        return;
-    }
-
-    // Validar duración máxima de 3 minutos (185 segundos con margen)
-    const videoElement = document.createElement('video');
-    videoElement.preload = 'metadata';
-
     if (publishBtn) {
-        publishBtn.innerText = '⏳ Procesando video...';
+        publishBtn.innerText = '⚙️ Optimizando video...';
         publishBtn.disabled = true;
     }
 
+    showToast('⚙️ Comprimiendo video para la nube...', 'info');
+
+    const videoElement = document.createElement('video');
+    videoElement.preload = 'metadata';
+    const objectUrl = URL.createObjectURL(file);
+    videoElement.src = objectUrl;
+
     videoElement.onloadedmetadata = function() {
-        window.URL.revokeObjectURL(videoElement.src);
-        
+        window.URL.revokeObjectURL(objectUrl);
+
         if (videoElement.duration > 185) {
-            showToast('⏱️ El video dura más de 3 minutos. Sube uno más corto.', 'error');
+            showToast('⏱️ El video dura más de 3 minutos.', 'error');
             if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
             return;
         }
 
-        const reader = new FileReader();
-        showToast('🚀 Subiendo video a la nube...', 'info');
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, 480 / videoElement.videoWidth);
+        canvas.width = videoElement.videoWidth * scale;
+        canvas.height = videoElement.videoHeight * scale;
+        
+        const ctx = canvas.getContext('2d');
+        videoElement.currentTime = 0;
 
-        reader.onload = async function(e) {
-            const base64Video = e.target.result;
-            if (!db) {
-                showToast('Firebase no disponible.', 'error');
-                if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
-                return;
-            }
-
+        videoElement.onseeked = async function() {
             try {
-                await db.collection('tiktokVideos').add({
-                    videoData: base64Video,
-                    description: descInput,
-                    authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
-                    authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-                    authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
-                    likes: [],
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
+                const reader = new FileReader();
+                showToast('🚀 Subiendo video optimizado a la nube...', 'info');
 
-                showToast('🎉 ¡Video publicado con éxito en Galactic!');
-                closeUploadVideoModal();
-                fileInput.value = '';
-                document.getElementById('input-video-desc').value = '';
-                loadTikTokFeed();
+                reader.onload = async function(e) {
+                    const base64Video = e.target.result;
+                    if (!db) {
+                        showToast('Firebase no disponible.', 'error');
+                        if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
+                        return;
+                    }
+
+                    try {
+                        await db.collection('tiktokVideos').add({
+                            videoData: base64Video,
+                            description: descInput,
+                            authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
+                            authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+                            authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
+                            likes: [],
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+
+                        showToast('🎉 ¡Video publicado con éxito en Galactic!');
+                        closeUploadVideoModal();
+                        fileInput.value = '';
+                        document.getElementById('input-video-desc').value = '';
+                        loadTikTokFeed();
+                    } catch (err) {
+                        console.log("Error guardando video:", err);
+                        showToast('El archivo sigue siendo muy pesado. Prueba con uno más corto.', 'error');
+                    } finally {
+                        if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
+                    }
+                };
+
+                reader.readAsDataURL(file);
             } catch (err) {
-                console.log("Error guardando video:", err);
-                showToast('El archivo superó el límite de la base de datos.', 'error');
-            } finally {
+                showToast('Error procesando el video.', 'error');
                 if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
             }
         };
 
-        reader.readAsDataURL(file);
+        videoElement.currentTime = 0.1;
     };
 
     videoElement.onerror = function() {
-        showToast('Error al leer el archivo de video.', 'error');
+        showToast('No se pudo leer el formato de este video.', 'error');
         if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
     };
-
-    videoElement.src = URL.createObjectURL(file);
 };
 
 function loadTikTokFeed() {
@@ -1281,7 +1295,6 @@ function showMainApp() {
     document.getElementById('view-dashboard')?.classList.remove('hidden');
     document.getElementById('btn-logout')?.classList.remove('hidden');
     
-    // Activar animación galáctica al entrar
     playGalacticIntroAnimation();
     updateUI();
 }
