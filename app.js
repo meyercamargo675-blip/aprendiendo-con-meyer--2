@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (CON AUDIO Y LÍMITE DE 1 MINUTO)
+// MÓDULO DE VIDEOS GALACTIC (HASTA 3 MIN Y 50MB, CON SONIDO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -811,7 +811,7 @@ function renderTikTokSection() {
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Máximo 1 Minuto / Con Sonido)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Máx 3 Min / Hasta 50MB / Con Sonido)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -819,7 +819,7 @@ function renderTikTokSection() {
                         <textarea id="input-video-desc" rows="3" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar con Sonido 🚀</button>
+                <button id="btn-publish-video-action" onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
             </div>
         </div>
     `;
@@ -838,6 +838,7 @@ window.closeUploadVideoModal = function() {
 window.publishLocalTikTokVideo = function() {
     const fileInput = document.getElementById('input-local-video-file');
     const descInput = document.getElementById('input-video-desc').value.trim();
+    const publishBtn = document.getElementById('btn-publish-video-action');
 
     if (!fileInput.files || fileInput.files.length === 0 || !descInput) {
         showToast('Selecciona un video y escribe una descripción.', 'error');
@@ -846,31 +847,38 @@ window.publishLocalTikTokVideo = function() {
 
     const file = fileInput.files[0];
 
-    // Validación de peso (Máximo 3.5MB para evitar que Firestore rechace el documento)
-    if (file.size > 3.5 * 1024 * 1024) {
-        showToast('⚠️ El video pesa más de 3.5MB. Sube uno más ligero o corto.', 'error');
+    // Límite amplio de 50MB para que cualquier video cargue
+    if (file.size > 50 * 1024 * 1024) {
+        showToast('⚠️ El video pesa más de 50MB. Elige uno un poco más corto.', 'error');
         return;
     }
 
-    // Validar duración máxima de 1 minuto usando un elemento temporal de video
+    // Validar duración máxima de 3 minutos (185 segundos con margen)
     const videoElement = document.createElement('video');
     videoElement.preload = 'metadata';
+
+    if (publishBtn) {
+        publishBtn.innerText = '⏳ Procesando video...';
+        publishBtn.disabled = true;
+    }
 
     videoElement.onloadedmetadata = function() {
         window.URL.revokeObjectURL(videoElement.src);
         
-        if (videoElement.duration > 65) {
-            showToast('⏱️ El video dura más de 1 minuto. Sube uno más corto.', 'error');
+        if (videoElement.duration > 185) {
+            showToast('⏱️ El video dura más de 3 minutos. Sube uno más corto.', 'error');
+            if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
             return;
         }
 
         const reader = new FileReader();
-        showToast('⏳ Subiendo video con sonido a la nube...', 'info');
+        showToast('🚀 Subiendo video a la nube...', 'info');
 
         reader.onload = async function(e) {
             const base64Video = e.target.result;
             if (!db) {
                 showToast('Firebase no disponible.', 'error');
+                if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
                 return;
             }
 
@@ -892,11 +900,18 @@ window.publishLocalTikTokVideo = function() {
                 loadTikTokFeed();
             } catch (err) {
                 console.log("Error guardando video:", err);
-                showToast('El archivo es demasiado pesado para la base de datos.', 'error');
+                showToast('El archivo superó el límite de la base de datos.', 'error');
+            } finally {
+                if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
             }
         };
 
         reader.readAsDataURL(file);
+    };
+
+    videoElement.onerror = function() {
+        showToast('Error al leer el archivo de video.', 'error');
+        if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
     };
 
     videoElement.src = URL.createObjectURL(file);
@@ -968,12 +983,11 @@ function loadTikTokFeed() {
         });
         container.innerHTML = html;
         
-        // Configurar reproducción con sonido al hacer clic o interactuar
         setTimeout(() => {
             document.querySelectorAll('.video-player-item').forEach(v => {
-                v.muted = false; // Intenta reproducir con sonido
+                v.muted = false;
                 v.play().catch(() => {
-                    v.muted = true; // Si el navegador bloquea el autoplay con sonido, lo silencia inicialmente pero permite activarlo
+                    v.muted = true;
                     v.play();
                 });
             });
@@ -1169,6 +1183,34 @@ window.startMyLiveStream = function() {
 };
 
 // ==========================================
+// ANIMACIÓN DE ENTRADA "MEYER GALACTIC"
+// ==========================================
+function playGalacticIntroAnimation() {
+    if (document.getElementById('galactic-intro-screen')) return;
+
+    const introDiv = document.createElement('div');
+    introDiv.id = 'galactic-intro-screen';
+    introDiv.className = 'fixed inset-0 z-[999999] bg-slate-950 flex flex-col items-center justify-center text-white transition-opacity duration-700';
+    introDiv.innerHTML = `
+        <div class="space-y-4 text-center animate-pulse">
+            <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-rose-600 rounded-3xl flex items-center justify-center mx-auto text-4xl shadow-2xl shadow-rose-500/50">
+                🌌
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-black tracking-widest bg-gradient-to-r from-indigo-400 via-rose-500 to-amber-400 bg-clip-text text-transparent">
+                MEYER GALACTIC
+            </h1>
+            <p class="text-xs font-mono text-slate-400 uppercase tracking-widest">Cargando Sistema Espacial...</p>
+        </div>
+    `;
+    document.body.appendChild(introDiv);
+
+    setTimeout(() => {
+        introDiv.style.opacity = '0';
+        setTimeout(() => introDiv.remove(), 700);
+    }, 1800);
+}
+
+// ==========================================
 // UTILIDADES Y AUTENTICACIÓN
 // ==========================================
 function showToast(message, type = 'success') {
@@ -1238,6 +1280,9 @@ function showMainApp() {
     document.getElementById('auth-modal')?.classList.add('hidden');
     document.getElementById('view-dashboard')?.classList.remove('hidden');
     document.getElementById('btn-logout')?.classList.remove('hidden');
+    
+    // Activar animación galáctica al entrar
+    playGalacticIntroAnimation();
     updateUI();
 }
 
@@ -1253,7 +1298,7 @@ function updateUI() {
     const userDisplayId = document.getElementById('user-display-id');
 
     if (welcomeHeader) welcomeHeader.innerText = `Hola, ${currentUser.name || 'Meyer'}`;
-    if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name || 'Meyer'}! Sistema Completo Listo`;
+    if (welcomeTitle) welcomeTitle.innerText = `¡Hola ${currentUser.name || 'Meyer'}! Sistema Galactic Listo`;
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
     if (userDisplayId) userDisplayId.innerText = currentUser.userId;
