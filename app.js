@@ -779,15 +779,15 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (SISTEMA BLINDADO BLOB URL)
+// MÓDULO DE VIDEOS GALACTIC (NUBE REAL FIRESTORE + BASE64 OPTIMIZADO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
     if (!secVideos) return;
 
     secVideos.innerHTML = `
-        <div class="max-w-md mx-auto bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col h-[650px] relative">
-            <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/90 to-transparent">
+        <div class="max-w-sm mx-auto bg-black rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col h-[650px] relative">
+            <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent">
                 <span class="text-xs font-bold text-slate-400">Siguiendo</span>
                 <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Videos Galactic 🌌</span>
                 <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 shadow transition flex items-center space-x-1">
@@ -795,7 +795,7 @@ function renderTikTokSection() {
                 </button>
             </div>
 
-            <div id="tiktok-feed-container" class="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none relative pt-12">
+            <div id="tiktok-feed-container" class="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none relative pt-12 h-full">
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 p-6 text-center">
                     <i class="fa-solid fa-spinner animate-spin text-2xl text-rose-500"></i>
                     <p class="text-xs">Cargando videos de la comunidad...</p>
@@ -811,7 +811,7 @@ function renderTikTokSection() {
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Cualquier Duración/Formato)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Permanente en Nube)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -847,49 +847,59 @@ window.publishLocalTikTokVideo = function() {
 
     const file = fileInput.files[0];
 
-    // Límite de 80MB ampliado y seguro
-    if (file.size > 80 * 1024 * 1024) {
-        showToast('⚠️ El video es mayor a 80MB. Elige uno ligeramente menor.', 'error');
+    // Límite de 45MB optimizado para que suba rápido y seguro a Firestore
+    if (file.size > 45 * 1024 * 1024) {
+        showToast('⚠️ El video pesa más de 45MB. Elige uno ligeramente menor.', 'error');
         return;
     }
 
     if (publishBtn) {
-        publishBtn.innerText = '🚀 Procesando video...';
+        publishBtn.innerText = '🚀 Subiendo a la nube...';
         publishBtn.disabled = true;
     }
 
-    showToast('⚙️ Leyendo archivo de video sin recortes...', 'info');
+    showToast('⚙️ Procesando video para todos los usuarios...', 'info');
 
-    // Usamos Blob URL directo en memoria: cero errores de lectura, cero cortes de duración
-    const videoBlobUrl = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Video = e.target.result;
 
-    if (!db) {
-        showToast('Firebase no disponible.', 'error');
+        if (!db) {
+            showToast('Firebase no disponible.', 'error');
+            if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
+            return;
+        }
+
+        try {
+            await db.collection('tiktokVideos').add({
+                videoData: base64Video,
+                description: descInput,
+                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
+                authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+                authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
+                likes: [],
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast('🎉 ¡Video publicado y guardado en la nube para todos!');
+            closeUploadVideoModal();
+            fileInput.value = '';
+            document.getElementById('input-video-desc').value = '';
+            loadTikTokFeed();
+        } catch (err) {
+            console.log("Error guardando video:", err);
+            showToast('El archivo superó el espacio permitido. Prueba con uno un poco más corto.', 'error');
+        } finally {
+            if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
+        }
+    };
+
+    reader.onerror = function() {
+        showToast('Error al leer el archivo de video.', 'error');
         if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
-        return;
-    }
+    };
 
-    db.collection('tiktokVideos').add({
-        videoData: videoBlobUrl,
-        fileName: file.name,
-        description: descInput,
-        authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
-        authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-        authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
-        likes: [],
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        showToast('🎉 ¡Video publicado con éxito en Galactic!');
-        closeUploadVideoModal();
-        fileInput.value = '';
-        document.getElementById('input-video-desc').value = '';
-        loadTikTokFeed();
-    }).catch((err) => {
-        console.log("Error guardando video:", err);
-        showToast('Error al subir el video a la nube.', 'error');
-    }).finally(() => {
-        if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
-    });
+    reader.readAsDataURL(file);
 };
 
 function loadTikTokFeed() {
@@ -916,8 +926,8 @@ function loadTikTokFeed() {
             const isFollowing = currentUser && currentUser.following && currentUser.following.includes(data.authorId);
 
             html += `
-                <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black border-b border-slate-900 group">
-                    <div class="absolute inset-0 z-0 flex items-center justify-center bg-slate-950 overflow-hidden">
+                <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black overflow-hidden shrink-0">
+                    <div class="absolute inset-0 z-0 flex items-center justify-center bg-black overflow-hidden">
                         <video src="${data.videoData || ''}" class="w-full h-full object-cover video-player-item" autoplay loop playsinline controls></video>
                     </div>
 
