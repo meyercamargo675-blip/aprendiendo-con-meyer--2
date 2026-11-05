@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS ESTILO TIKTOK (DESDE ARCHIVO LOCAL)
+// MÓDULO DE VIDEOS ESTILO TIKTOK (SU ESPACIO DEDICADO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -787,38 +787,39 @@ function renderTikTokSection() {
 
     secVideos.innerHTML = `
         <div class="max-w-md mx-auto bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col h-[650px] relative">
-            <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/80 to-transparent">
+            <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/90 to-transparent">
                 <span class="text-xs font-bold text-slate-400">Siguiendo</span>
                 <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Para ti 🎬</span>
-                <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/80 p-2 rounded-full border border-slate-700 shadow transition flex items-center space-x-1">
-                    <i class="fa-solid fa-plus text-xs"></i><span class="text-[10px] font-bold">Subir</span>
+                <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 shadow transition flex items-center space-x-1">
+                    <i class="fa-solid fa-plus text-xs"></i><span class="text-[10px] font-bold">Subir Video</span>
                 </button>
             </div>
 
-            <div id="tiktok-feed-container" class="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none relative">
-                <div class="flex items-center justify-center h-full text-slate-400 text-xs">
-                    <i class="fa-solid fa-spinner animate-spin mr-2"></i> Cargando videos...
+            <div id="tiktok-feed-container" class="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none relative pt-12">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 p-6 text-center">
+                    <i class="fa-solid fa-spinner animate-spin text-2xl text-rose-500"></i>
+                    <p class="text-xs">Cargando videos de la comunidad...</p>
                 </div>
             </div>
         </div>
 
-        <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+        <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-fade-in">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-black text-white">📤 Subir Video de la Carpeta</h3>
-                    <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                    <h3 class="text-base font-black text-white">📤 Subir Video (Carpeta Local)</h3>
+                    <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (MP4 / AVI / MOV)</label>
-                        <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Archivo (MP4 / MOV)</label>
+                        <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Descripción del Video</label>
-                        <textarea id="input-video-desc" rows="2" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Descripción y Hashtags</label>
+                        <textarea id="input-video-desc" rows="3" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar Video 🚀</button>
+                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en TikTok 🚀</button>
             </div>
         </div>
     `;
@@ -839,14 +840,14 @@ window.publishLocalTikTokVideo = function() {
     const descInput = document.getElementById('input-video-desc').value.trim();
 
     if (!fileInput.files || fileInput.files.length === 0 || !descInput) {
-        showToast('Selecciona un archivo de video y escribe una descripción.', 'error');
+        showToast('Selecciona un video y escribe una descripción.', 'error');
         return;
     }
 
     const file = fileInput.files[0];
     const reader = new FileReader();
 
-    showToast('⏳ Preparando video...', 'info');
+    showToast('⏳ Subiendo video a la nube...', 'info');
 
     reader.onload = async function(e) {
         const base64Video = e.target.result;
@@ -859,21 +860,21 @@ window.publishLocalTikTokVideo = function() {
             await db.collection('tiktokVideos').add({
                 videoData: base64Video,
                 description: descInput,
-                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Usuario',
+                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
                 authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-                authorAvatar: currentUser ? (currentUser.avatarUrl || '') : '',
+                authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
                 likes: [],
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            showToast('🎉 ¡Video subido con éxito!');
+            showToast('🎉 ¡Video publicado con éxito!');
             closeUploadVideoModal();
             fileInput.value = '';
             document.getElementById('input-video-desc').value = '';
             loadTikTokFeed();
         } catch (err) {
             console.log("Error guardando video:", err);
-            showToast('El video es muy pesado para la base de datos o hubo un error.', 'error');
+            showToast('El archivo es demasiado pesado para la base de datos.', 'error');
         }
     };
 
@@ -887,9 +888,9 @@ function loadTikTokFeed() {
     db.collection('tiktokVideos').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
         if (snapshot.empty) {
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 p-6 text-center">
-                    <div class="text-3xl">📭</div>
-                    <p class="text-xs">No hay videos aún. ¡Sube el primero desde tu dispositivo!</p>
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 p-6 text-center">
+                    <div class="text-4xl">📱</div>
+                    <p class="text-xs">No hay videos aún. ¡Sube el primero usando el botón superior!</p>
                 </div>
             `;
             return;
