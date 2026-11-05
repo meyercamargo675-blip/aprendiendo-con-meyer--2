@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS ESTILO TIKTOK (SU ESPACIO DEDICADO)
+// MÓDULO DE VIDEOS ESTILO TIKTOK
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
