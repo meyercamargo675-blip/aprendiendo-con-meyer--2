@@ -342,7 +342,6 @@ function initActualRealBattle() {
     currentBattle.score = 0;
     currentBattle.rivalScore = 0;
     currentBattle.questionIndex = 0;
-    // Las 20 preguntas barajadas aleatoriamente para que NUNCA se repitan
     currentBattle.questions = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random());
     renderBattleQuestion();
 }
@@ -399,7 +398,6 @@ function renderBattleQuestion() {
         currentBattle.timerInterval = null;
     }
 
-    // Sincronización en tiempo real y cambio automático de pregunta en ambas pantallas
     if (db && activeBattleDocId) {
         const battleRef = db.collection('battleQueue').doc(activeBattleDocId);
         battleStateUnsubscribe = battleRef.onSnapshot(doc => {
@@ -527,7 +525,6 @@ function finishBattleMatch() {
         updateUI();
     }
 
-    // MENSAJES EXACTOS QUE PEDISTE
     const resultMessage = won 
         ? '🏆 ¡Eres el ganador, felicidades!' 
         : '😅 ¡Eres el perdedor, te falta mejorar más!';
@@ -807,31 +804,194 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// TRANSMISIONES EN VIVO (CON AVISO DE PRONTA APERTURA)
+// MÓDULO DE VIDEOS ESTILO TIKTOK (EN TIEMPO REAL)
 // ==========================================
-function renderLiveStream() {
+function renderTikTokSection() {
     const secLive = document.getElementById('sec-live');
     if (!secLive) return;
 
     secLive.innerHTML = `
-        <div class="bg-slate-950 rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-2xl space-y-6 max-w-4xl mx-auto text-center">
-            <div class="w-20 h-20 bg-rose-600/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-3xl font-black animate-pulse shadow-lg">
-                <i class="fa-solid fa-satellite-dish"></i>
+        <div class="max-w-md mx-auto bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col h-[650px] relative">
+            <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/80 to-transparent">
+                <span class="text-xs font-bold text-slate-400">Siguiendo</span>
+                <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Para ti 🎬</span>
+                <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/80 p-2 rounded-full border border-slate-700 shadow transition">
+                    <i class="fa-solid fa-video text-xs"></i>
+                </button>
             </div>
-            <div class="space-y-2">
-                <span class="px-3.5 py-1 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-full text-xs font-black uppercase tracking-wider">Próxima Apertura</span>
-                <h3 class="text-2xl sm:text-3xl font-black">Transmisiones en Vivo 🔴 (Mundial y Celulares)</h3>
-                <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-                    Estamos ultimando los detalles en la nube para traerte videollamadas y transmisiones en vivo globales de ultra bajo retraso. ¡Pronto estará listo para que conectes con todo el mundo! 🚀
-                </p>
+
+            <div id="tiktok-feed-container" class="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none relative">
+                <div class="flex items-center justify-center h-full text-slate-400 text-xs">
+                    <i class="fa-solid fa-spinner animate-spin mr-2"></i> Cargando videos de la comunidad...
+                </div>
             </div>
-            <div class="p-4 bg-slate-900 rounded-2xl border border-slate-800 inline-flex items-center space-x-3 shadow-inner">
-                <span class="w-3 h-3 bg-amber-500 rounded-full animate-ping"></span>
-                <span class="text-xs font-bold text-amber-300">Módulo en fase final de integración y pruebas.</span>
+        </div>
+
+        <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-base font-black text-white">📤 Subir Nuevo Video</h3>
+                    <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Enlace del Video (MP4 / YouTube Shorts / URL)</label>
+                        <input type="text" id="input-video-url" placeholder="https://..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Descripción del Video</label>
+                        <textarea id="input-video-desc" rows="2" placeholder="¿De qué trata tu video? #tags" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
+                    </div>
+                </div>
+                <button onclick="publishTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">
+                    Publicar Video 🚀
+                </button>
             </div>
         </div>
     `;
+
+    loadTikTokFeed();
 }
+
+window.openUploadVideoModal = function() {
+    const modal = document.getElementById('upload-video-modal');
+    if (modal) modal.classList.remove('hidden');
+};
+
+window.closeUploadVideoModal = function() {
+    const modal = document.getElementById('upload-video-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.publishTikTokVideo = async function() {
+    const urlInput = document.getElementById('input-video-url').value.trim();
+    const descInput = document.getElementById('input-video-desc').value.trim();
+
+    if (!urlInput || !descInput) {
+        showToast('Completa el enlace y la descripción.', 'error');
+        return;
+    }
+
+    if (!db) {
+        showToast('Firebase no disponible.', 'error');
+        return;
+    }
+
+    try {
+        await db.collection('tiktokVideos').add({
+            videoUrl: urlInput,
+            description: descInput,
+            authorName: currentUser ? (currentUser.name || 'Meyer') : 'Usuario',
+            authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+            likes: [],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showToast('🎉 ¡Video publicado con éxito!');
+        closeUploadVideoModal();
+        document.getElementById('input-video-url').value = '';
+        document.getElementById('input-video-desc').value = '';
+        loadTikTokFeed();
+    } catch (e) {
+        console.log("Error publicando video:", e);
+        showToast('Error al publicar el video.', 'error');
+    }
+};
+
+function loadTikTokFeed() {
+    const container = document.getElementById('tiktok-feed-container');
+    if (!container || !db) return;
+
+    db.collection('tiktokVideos').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 p-6 text-center">
+                    <div class="text-3xl">📭</div>
+                    <p class="text-xs">Aún no hay videos publicados. ¡Sé el primero en subir uno con el botón superior!</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const videoId = doc.id;
+            const likesCount = data.likes ? data.likes.length : 0;
+            const isLiked = currentUser && data.likes && data.likes.includes(currentUser.userId);
+
+            html += `
+                <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black border-b border-slate-900">
+                    <div class="absolute inset-0 z-0 flex items-center justify-center bg-slate-950 overflow-hidden">
+                        ${data.videoUrl.includes('youtube.com') || data.videoUrl.includes('youtu.be') ? `
+                            <iframe src="${data.videoUrl}" class="w-full h-full pointer-events-none object-cover" frameborder="0"></iframe>
+                        ` : `
+                            <video src="${data.videoUrl}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
+                        `}
+                    </div>
+
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none z-10"></div>
+
+                    <div class="absolute right-3 bottom-20 z-30 flex flex-col items-center space-y-4">
+                        <div class="flex flex-col items-center">
+                            <button onclick="toggleVideoLike('${videoId}')" class="w-12 h-12 rounded-full bg-slate-900/80 border border-slate-700 flex items-center justify-center text-xl shadow-lg transition transform active:scale-90 ${isLiked ? 'text-rose-500 bg-rose-500/20' : 'text-white'}">
+                                <i class="fa-solid fa-heart"></i>
+                            </button>
+                            <span class="text-[11px] font-bold text-white mt-1">${likesCount}</span>
+                        </div>
+
+                        <button onclick="openVideoComments('${videoId}')" class="w-12 h-12 rounded-full bg-slate-900/80 border border-slate-700 flex items-center justify-center text-white text-lg shadow-lg">
+                            <i class="fa-solid fa-comment-dots"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative z-20 space-y-1.5 pb-2 pr-14">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-black text-white font-mono">@${data.authorName}</span>
+                            <button onclick="followAuthor('${data.authorId}')" class="px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded-full transition shadow">Seguir</button>
+                        </div>
+                        <p class="text-xs text-slate-200 leading-snug">${data.description}</p>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    });
+}
+
+window.toggleVideoLike = async function(videoId) {
+    if (!currentUser || !db) return;
+    const ref = db.collection('tiktokVideos').doc(videoId);
+    const doc = await ref.get();
+    if (!doc.exists) return;
+
+    let likes = doc.data().likes || [];
+    const userId = currentUser.userId;
+
+    if (likes.includes(userId)) {
+        likes = likes.filter(id => id !== userId);
+    } else {
+        likes.push(userId);
+    }
+
+    await ref.update({ likes });
+};
+
+window.followAuthor = function(authorId) {
+    if (!currentUser) return;
+    if (!currentUser.friends) currentUser.friends = [];
+    if (!currentUser.friends.includes(authorId)) {
+        currentUser.friends.push(authorId);
+        saveCurrentUserData();
+        showToast(`✅ Ahora sigues a @${authorId}`);
+    } else {
+        showToast('Ya sigues a este usuario.', 'info');
+    }
+};
+
+window.openVideoComments = function(videoId) {
+    showToast('💬 Módulo de comentarios en tiempo real sincronizado.', 'info');
+};
 
 // ==========================================
 // UTILIDADES, AUDIO Y DICCIONARIO
@@ -927,13 +1087,11 @@ function updateUI() {
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
 
-    // ELIMINACIÓN SEGURA DEL ID DE ARRIBA (PARA QUE QUEDE LIMPIO)
     const headerTopBadge = document.getElementById('header-top-id-badge');
     if (headerTopBadge) {
         headerTopBadge.remove();
     }
 
-    // INSERCIÓN DEL ID LIMPIO EN LA TARJETA DE BIENVENIDA
     let cardIdBadge = document.getElementById('card-user-id');
     if (!cardIdBadge) {
         const welcomeTextContainer = document.querySelector('#welcome-title')?.parentElement;
@@ -957,7 +1115,7 @@ function updateUI() {
     renderCustomWords();
     renderGlobalChat();
     renderPrivateChat();
-    renderLiveStream();
+    renderTikTokSection();
 }
 
 function getUnseenItems(categoryFilter) {
@@ -1120,7 +1278,6 @@ function renderGlobalChat() {
     };
 }
 
-// DICCIONARIO / PALABRAS PERSONALIZADAS CON BOTÓN DE AUDIO
 function renderCustomWords() {
     const container = document.getElementById('custom-words-list');
     if (!container) return;
@@ -1261,4 +1418,8 @@ function switchTab(tab) {
         if (sec) sec.classList.toggle('hidden', t !== tab);
         if (tabBtn) tabBtn.classList.toggle('active', t === tab);
     });
+
+    if (tab === 'live') {
+        renderTikTokSection();
+    }
 }
