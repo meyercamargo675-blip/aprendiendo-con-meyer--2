@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (MÁXIMO 1 MINUTO)
+// MÓDULO DE VIDEOS GALACTIC (CON AUDIO Y LÍMITE DE 1 MINUTO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -811,7 +811,7 @@ function renderTikTokSection() {
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Máximo 1 Minuto)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Máximo 1 Minuto / Con Sonido)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -819,7 +819,7 @@ function renderTikTokSection() {
                         <textarea id="input-video-desc" rows="3" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
+                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar con Sonido 🚀</button>
             </div>
         </div>
     `;
@@ -846,13 +846,13 @@ window.publishLocalTikTokVideo = function() {
 
     const file = fileInput.files[0];
 
-    // Validación de peso (Máximo 3MB para la nube)
-    if (file.size > 3 * 1024 * 1024) {
-        showToast('⚠️ El video pesa más de 3MB. Sube uno más ligero.', 'error');
+    // Validación de peso (Máximo 3.5MB para evitar que Firestore rechace el documento)
+    if (file.size > 3.5 * 1024 * 1024) {
+        showToast('⚠️ El video pesa más de 3.5MB. Sube uno más ligero o corto.', 'error');
         return;
     }
 
-    // Validar duración máxima de 1 minuto (65 segundos con margen)
+    // Validar duración máxima de 1 minuto usando un elemento temporal de video
     const videoElement = document.createElement('video');
     videoElement.preload = 'metadata';
 
@@ -865,7 +865,7 @@ window.publishLocalTikTokVideo = function() {
         }
 
         const reader = new FileReader();
-        showToast('⏳ Subiendo video a Videos Galactic...', 'info');
+        showToast('⏳ Subiendo video con sonido a la nube...', 'info');
 
         reader.onload = async function(e) {
             const base64Video = e.target.result;
@@ -885,7 +885,7 @@ window.publishLocalTikTokVideo = function() {
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                showToast('🎉 ¡Video publicado en Videos Galactic!');
+                showToast('🎉 ¡Video publicado con éxito en Galactic!');
                 closeUploadVideoModal();
                 fileInput.value = '';
                 document.getElementById('input-video-desc').value = '';
@@ -926,12 +926,17 @@ function loadTikTokFeed() {
             const isFollowing = currentUser && currentUser.following && currentUser.following.includes(data.authorId);
 
             html += `
-                <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black border-b border-slate-900">
+                <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black border-b border-slate-900 group">
                     <div class="absolute inset-0 z-0 flex items-center justify-center bg-slate-950 overflow-hidden">
-                        <video src="${data.videoData || ''}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
+                        <video src="${data.videoData || ''}" class="w-full h-full object-cover video-player-item" autoplay loop playsinline onclick="toggleVideoAudio(this)"></video>
                     </div>
 
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none z-10"></div>
+
+                    <!-- BOTÓN PARA ACTIVAR / SILENCIAR AUDIO -->
+                    <button onclick="toggleVideoAudio(this.previousElementSibling.querySelector('video') || this.parentElement.querySelector('video'))" class="absolute top-16 right-4 z-30 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-full backdrop-blur-md border border-white/20 transition text-xs shadow-lg">
+                        <i class="fa-solid fa-volume-high audio-icon-indicator"></i>
+                    </button>
 
                     <div class="absolute right-3 bottom-20 z-30 flex flex-col items-center space-y-4">
                         <div class="flex flex-col items-center">
@@ -962,8 +967,25 @@ function loadTikTokFeed() {
             `;
         });
         container.innerHTML = html;
+        
+        // Configurar reproducción con sonido al hacer clic o interactuar
+        setTimeout(() => {
+            document.querySelectorAll('.video-player-item').forEach(v => {
+                v.muted = false; // Intenta reproducir con sonido
+                v.play().catch(() => {
+                    v.muted = true; // Si el navegador bloquea el autoplay con sonido, lo silencia inicialmente pero permite activarlo
+                    v.play();
+                });
+            });
+        }, 300);
     });
 }
+
+window.toggleVideoAudio = function(videoEl) {
+    if (!videoEl) return;
+    videoEl.muted = !videoEl.muted;
+    showToast(videoEl.muted ? '🔇 Video silenciado' : '🔊 Audio activado', 'info');
+};
 
 window.toggleVideoLike = async function(videoId) {
     if (!currentUser || !db) return;
