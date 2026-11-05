@@ -57,6 +57,7 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'card', en: 'Problem Solving Skills', es: 'Habilidades de Resolución de Problemas', phonetic: 'Problem solving skils', category: 'Avanzado' }
 ];
 
+// BANCO EXACTO DE 20 PREGUNTAS ÚNICAS
 const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Vaca" en inglés?', img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=300', options: ['Cow', 'Horse', 'Pig', 'Sheep'], correct: 0 },
     { q: '¿Cómo se dice "Perro" en inglés?', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300', options: ['Cat', 'Dog', 'Rabbit', 'Fox'], correct: 1 },
@@ -67,7 +68,17 @@ const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Libro" en inglés?', img: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300', options: ['Pen', 'Book', 'Notebook', 'Paper'], correct: 1 },
     { q: '¿Cómo se dice "Agua" en inglés?', img: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=300', options: ['Water', 'Milk', 'Juice', 'Soda'], correct: 0 },
     { q: '¿Cómo se dice "Sol" en inglés?', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300', options: ['Moon', 'Sun', 'Star', 'Sky'], correct: 1 },
-    { q: '¿Cómo se dice "Computadora" en inglés?', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300', options: ['Computer', 'Phone', 'Tablet', 'Radio'], correct: 0 }
+    { q: '¿Cómo se dice "Computadora" en inglés?', img: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300', options: ['Computer', 'Phone', 'Tablet', 'Radio'], correct: 0 },
+    { q: '¿Cómo se dice "Fuego" en inglés?', img: 'https://images.unsplash.com/photo-1508873696983-2df5c920ac9c?w=300', options: ['Water', 'Fire', 'Wind', 'Earth'], correct: 1 },
+    { q: '¿Cómo se dice "Árbol" en inglés?', img: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=300', options: ['Plant', 'Flower', 'Tree', 'Leaf'], correct: 2 },
+    { q: '¿Cómo se dice "Escuela" en inglés?', img: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=300', options: ['Hospital', 'School', 'Library', 'Park'], correct: 1 },
+    { q: '¿Cómo se dice "Pelota" en inglés?', img: 'https://images.unsplash.com/photo-1575361204480-aadea25d6e68?w=300', options: ['Ball', 'Bat', 'Net', 'Goal'], correct: 0 },
+    { q: '¿Cómo se dice "Comida" en inglés?', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300', options: ['Drink', 'Food', 'Fruit', 'Meat'], correct: 1 },
+    { q: '¿Cómo se dice "Mesa" en inglés?', img: 'https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=300', options: ['Chair', 'Table', 'Door', 'Bed'], correct: 1 },
+    { q: '¿Cómo se dice "Puerta" en inglés?', img: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=300', options: ['Window', 'Wall', 'Door', 'Floor'], correct: 2 },
+    { q: '¿Cómo se dice "Lápiz" en inglés?', img: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=300', options: ['Pencil', 'Pen', 'Eraser', 'Ruler'], correct: 0 },
+    { q: '¿Cómo se dice "Flor" en inglés?', img: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=300', options: ['Tree', 'Flower', 'Grass', 'Seed'], correct: 1 },
+    { q: '¿Cómo se dice "Estrella" en inglés?', img: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=300', options: ['Sun', 'Moon', 'Star', 'Planet'], correct: 2 }
 ];
 
 let currentUser = null;
@@ -89,7 +100,7 @@ function ensureUserUniqueId(userObj) {
 }
 
 // ==========================================
-// MÓDULO DE BATALLA 1VS1 (REAL EN LA NUBE)
+// MÓDULO DE BATALLA 1VS1 (20 PREGUNTAS ÚNICAS SIN REPETIR)
 // ==========================================
 let currentBattle = {
     mode: 'random',
@@ -115,8 +126,8 @@ window.openWarSetup = function() {
             <div class="w-16 h-16 bg-rose-600/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-2xl font-black">
                 <i class="fa-solid fa-gamepad"></i>
             </div>
-            <h3 class="text-2xl font-extrabold text-white">⚔️ Guerra de Inglés 1vs1 Real</h3>
-            <p class="text-xs text-slate-300">Conecta y espera a un jugador real en línea para competir.</p>
+            <h3 class="text-2xl font-extrabold text-white">⚔️ Guerra de Inglés 1vs1 Real (20 Preguntas)</h3>
+            <p class="text-xs text-slate-300">Preguntas únicas sin repetir, sincronizadas en tiempo real.</p>
             
             <div class="flex justify-center gap-4 py-1">
                 <label class="cursor-pointer flex flex-col items-center">
@@ -149,7 +160,7 @@ window.openWarSetup = function() {
             </div>
         </div>
     `;
-    document.getElementById('lesson-counter').innerText = 'Duelo 1vs1 Real';
+    document.getElementById('lesson-counter').innerText = 'Duelo 1vs1';
     document.getElementById('lesson-progress').style.width = '100%';
 };
 
@@ -186,7 +197,6 @@ window.startRealMatchmaking = async function() {
     }
 
     try {
-        // Buscamos una sala en espera que no esté llena
         const queueRef = db.collection('battleQueue');
         const snapshot = await queueRef.where('status', '==', 'waiting').get();
 
@@ -202,7 +212,6 @@ window.startRealMatchmaking = async function() {
         });
 
         if (foundDoc && joinedBattleId) {
-            // Nos unimos como invitado a la sala encontrada
             activeBattleDocId = joinedBattleId;
             currentBattle.isHost = false;
             currentBattle.battleId = joinedBattleId;
@@ -219,7 +228,6 @@ window.startRealMatchmaking = async function() {
             showToast('¡Rival encontrado! Iniciando batalla real...', 'success');
             initActualRealBattle();
         } else {
-            // Creamos una nueva sala y esperamos a que alguien más entre
             const newRoomRef = queueRef.doc();
             activeBattleDocId = newRoomRef.id;
             currentBattle.isHost = true;
@@ -233,10 +241,10 @@ window.startRealMatchmaking = async function() {
                 guestName: null,
                 guestAvatar: null,
                 status: 'waiting',
+                questionIndex: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Escuchamos si un rival entra a nuestra sala creada
             matchmakingUnsubscribe = db.collection('battleQueue').doc(activeBattleDocId).onSnapshot(doc => {
                 const data = doc.data();
                 if (data && data.status === 'playing' && data.guestId) {
@@ -302,6 +310,7 @@ window.startPrivateRoomMatch = async function() {
             hostName: currentUser.name || 'Meyer',
             hostAvatar: selectedAvatar,
             status: 'waiting',
+            questionIndex: 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
@@ -333,7 +342,8 @@ function initActualRealBattle() {
     currentBattle.score = 0;
     currentBattle.rivalScore = 0;
     currentBattle.questionIndex = 0;
-    currentBattle.questions = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random()).slice(0, 15);
+    // Las 20 preguntas barajadas aleatoriamente para que NUNCA se repitan
+    currentBattle.questions = [...BATTLE_QUESTIONS_BANK].sort(() => 0.5 - Math.random());
     renderBattleQuestion();
 }
 
@@ -389,7 +399,7 @@ function renderBattleQuestion() {
         currentBattle.timerInterval = null;
     }
 
-    // Sincronizamos puntuación con Firebase en tiempo real
+    // Sincronización en tiempo real y cambio automático de pregunta en ambas pantallas
     if (db && activeBattleDocId) {
         const battleRef = db.collection('battleQueue').doc(activeBattleDocId);
         battleStateUnsubscribe = battleRef.onSnapshot(doc => {
@@ -408,6 +418,11 @@ function renderBattleQuestion() {
                         if (el) el.innerText = `${currentBattle.rivalScore} pts`;
                     }
                 }
+
+                if (data.questionIndex !== undefined && data.questionIndex > currentBattle.questionIndex) {
+                    currentBattle.questionIndex = data.questionIndex;
+                    renderBattleQuestion();
+                }
             }
         });
     }
@@ -421,10 +436,23 @@ function renderBattleQuestion() {
             clearInterval(currentBattle.timerInterval);
             currentBattle.timerInterval = null;
             showToast('⏰ ¡Tiempo agotado!', 'error');
-            currentBattle.questionIndex++;
-            renderBattleQuestion();
+            advanceQuestionInCloud();
         }
     }, 1000);
+}
+
+async function advanceQuestionInCloud() {
+    currentBattle.questionIndex++;
+    if (db && activeBattleDocId) {
+        try {
+            await db.collection('battleQueue').doc(activeBattleDocId).update({
+                questionIndex: currentBattle.questionIndex
+            });
+        } catch (e) {
+            console.log("Error avanzando pregunta en nube:", e);
+        }
+    }
+    renderBattleQuestion();
 }
 
 window.handleBattleAnswer = async function(selectedIdx, correctIdx) {
@@ -449,10 +477,10 @@ window.handleBattleAnswer = async function(selectedIdx, correctIdx) {
         showToast('❌ Incorrecto', 'error');
     }
 
-    // Actualizamos nuestra puntuación en la nube para que el rival la vea
     if (db && activeBattleDocId) {
         try {
             const updateObj = currentBattle.isHost ? { hostScore: currentBattle.score } : { guestScore: currentBattle.score };
+            updateObj.questionIndex = currentBattle.questionIndex + 1;
             await db.collection('battleQueue').doc(activeBattleDocId).update(updateObj);
         } catch (e) {
             console.log("Error actualizando score en nube:", e);
@@ -499,10 +527,15 @@ function finishBattleMatch() {
         updateUI();
     }
 
+    // MENSAJES EXACTOS QUE PEDISTE
+    const resultMessage = won 
+        ? '🏆 ¡Eres el ganador, felicidades!' 
+        : '😅 ¡Eres el perdedor, te falta mejorar más!';
+
     container.innerHTML = `
         <div class="max-w-md mx-auto text-center space-y-6 p-4">
-            <div class="text-5xl">${won ? '🏆' : '🤝'}</div>
-            <h3 class="text-2xl font-black text-white">${won ? '¡Victoria Épica!' : '¡Buen Combate!'}</h3>
+            <div class="text-5xl">${won ? '🥇' : '📖'}</div>
+            <h3 class="text-2xl font-black text-white">${resultMessage}</h3>
             <p class="text-xs text-slate-300">Tus puntos: <b>${currentBattle.score}</b> | Puntos de ${currentBattle.rivalName}: <b>${currentBattle.rivalScore}</b></p>
             <button onclick="document.getElementById('view-lesson-modal').classList.add('hidden')" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">
                 Finalizar y Reclamar XP 🚀
@@ -954,7 +987,7 @@ function renderLessons() {
             <div class="mb-4 sm:mb-0">
                 <span class="px-3 py-1 bg-white/25 backdrop-blur-md rounded-full text-xs font-bold uppercase">¡Modo Duelo 1vs1!</span>
                 <h3 class="text-2xl font-black mt-2">⚔️ Guerra de Inglés con Micrófono</h3>
-                <p class="text-xs text-rose-100 mt-1">15 Preguntas variadas sin repetición y 10s por turno.</p>
+                <p class="text-xs text-rose-100 mt-1">20 Preguntas únicas y sincronización en tiempo real.</p>
             </div>
             <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition transform active:scale-95 shrink-0">
                 ¡Lanzar Batalla! ⚔️
