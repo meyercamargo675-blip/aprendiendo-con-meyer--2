@@ -1058,6 +1058,73 @@ window.saveProfileName = function() {
 };
 
 // ==========================================
+// MÓDULO DE TRANSMISIÓN EN VIVO (LIVE)
+// ==========================================
+function renderLiveSection() {
+    const secLive = document.getElementById('sec-live');
+    if (!secLive) return;
+
+    secLive.innerHTML = `
+        <div class="max-w-md mx-auto bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-xl space-y-6 text-white text-center">
+            <div class="w-16 h-16 bg-rose-600/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-2xl font-black animate-pulse">
+                <i class="fa-solid fa-tower-broadcast"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-xl font-black">🔴 Transmisión En Vivo</h3>
+                <p class="text-xs text-slate-300">Conecta con la comunidad de Meyer en tiempo real.</p>
+            </div>
+
+            <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-3 text-left">
+                <label class="text-[10px] uppercase font-bold text-slate-400">Título de tu Live</label>
+                <input type="text" id="live-title-input" placeholder="Ej. Practicando inglés y programando..." class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-rose-500 font-bold">
+                
+                <button onclick="startMyLiveStream()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-video"></i><span>Iniciar Transmisión En Vivo 🎥</span>
+                </button>
+            </div>
+
+            <div class="border-t border-slate-800 pt-4 text-left space-y-2">
+                <h4 class="text-xs font-bold text-indigo-400 uppercase">Lives Activos de la Comunidad</h4>
+                <div id="active-lives-list" class="space-y-2">
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-400 text-center">
+                        No hay transmisiones activas en este momento. ¡Sé el primero en iniciar una! 🚀
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.startMyLiveStream = function() {
+    const titleInput = document.getElementById('live-title-input');
+    const title = titleInput ? titleInput.value.trim() : 'Live de Meyer';
+    
+    showToast(`🔴 ¡Transmisión "${title}" iniciada con éxito!`);
+    
+    const secLive = document.getElementById('sec-live');
+    if (secLive) {
+        secLive.innerHTML = `
+            <div class="max-w-md mx-auto bg-slate-950 rounded-3xl border border-rose-600/50 p-6 shadow-2xl space-y-4 text-white text-center relative overflow-hidden">
+                <div class="absolute top-3 right-3 bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">EN VIVO 🔴</div>
+                
+                <div class="w-full h-48 bg-black rounded-2xl border border-slate-800 flex flex-col items-center justify-center relative shadow-inner">
+                    <i class="fa-solid fa-video text-4xl text-rose-500 mb-2"></i>
+                    <p class="text-xs font-bold text-slate-300">${title}</p>
+                    <span class="text-[10px] text-slate-500 mt-1">Transmitiendo en alta definición...</span>
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs">
+                    <div>Espectadores: <b class="text-emerald-400">1</b></div>
+                    <div>Duración: <b class="text-indigo-400">00:45</b></div>
+                </div>
+
+                <button onclick="renderLiveSection()" class="w-full py-3 bg-slate-800 hover:bg-rose-600 text-white font-bold text-xs rounded-xl transition shadow">Finalizar Transmisión ❌</button>
+            </div>
+        `;
+    }
+};
+
+// ==========================================
 // UTILIDADES Y AUTENTICACIÓN
 // ==========================================
 function showToast(message, type = 'success') {
@@ -1172,6 +1239,7 @@ function updateUI() {
     renderPrivateChat();
     renderTikTokSection();
     renderProfileSection();
+    renderLiveSection();
 }
 
 function getUnseenItems(categoryFilter) {
@@ -1474,37 +1542,7 @@ function switchTab(tab) {
         renderTikTokSection();
     } else if (tab === 'profile') {
         renderProfileSection();
+    } else if (tab === 'live') {
+        renderLiveSection();
     }
 }
-
-// ==========================================
-// CORRECCIÓN DE CLICS Y CIERRE DE MODALES
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Asegurar que los botones de cerrar (X) funcionen en cualquier modal
-    const closeButtons = document.querySelectorAll('[onclick*="hidden"], .fa-xmark, [id*="close"]');
-    closeButtons.forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-        btn.style.zIndex = '99999';
-    });
-
-    // Liberar bloqueos de capas fantasma en el chat global y pestañas
-    const chatSec = document.getElementById('sec-chat');
-    if (chatSec) chatSec.style.pointerEvents = 'auto';
-
-    const globalOverlay = document.createElement('style');
-    globalOverlay.innerHTML = `
-        button, a, input, textarea, select, .cursor-pointer {
-            pointer-events: auto !important;
-        }
-        .fixed, .absolute {
-            /* Evita que capas vacías bloqueen los clics debajo */
-            pointer-events: none;
-        }
-        /* Excepto los elementos interactivos dentro de los contenedores flotantes */
-        .fixed *, .absolute * {
-            pointer-events: auto;
-        }
-    `;
-    document.head.appendChild(globalOverlay);
-});
