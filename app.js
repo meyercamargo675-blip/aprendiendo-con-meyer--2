@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS ESTILO TIKTOK (OPTIMIZADO)
+// MÓDULO DE VIDEOS GALACTIC (MÁXIMO 1 MINUTO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -789,7 +789,7 @@ function renderTikTokSection() {
         <div class="max-w-md mx-auto bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col h-[650px] relative">
             <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/90 to-transparent">
                 <span class="text-xs font-bold text-slate-400">Siguiendo</span>
-                <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Para ti 🎬</span>
+                <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Videos Galactic 🌌</span>
                 <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 shadow transition flex items-center space-x-1">
                     <i class="fa-solid fa-plus text-xs"></i><span class="text-[10px] font-bold">Subir Video</span>
                 </button>
@@ -806,12 +806,12 @@ function renderTikTokSection() {
         <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-fade-in">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-black text-white">📤 Subir Video (Carpeta Local)</h3>
+                    <h3 class="text-base font-black text-white">📤 Subir a Videos Galactic</h3>
                     <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Archivo (MP4 corto / Menor a 2MB)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Máximo 1 Minuto)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -819,7 +819,7 @@ function renderTikTokSection() {
                         <textarea id="input-video-desc" rows="3" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en TikTok 🚀</button>
+                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
             </div>
         </div>
     `;
@@ -840,51 +840,66 @@ window.publishLocalTikTokVideo = function() {
     const descInput = document.getElementById('input-video-desc').value.trim();
 
     if (!fileInput.files || fileInput.files.length === 0 || !descInput) {
-        showToast('Selecciona un video corto y escribe una descripción.', 'error');
+        showToast('Selecciona un video y escribe una descripción.', 'error');
         return;
     }
 
     const file = fileInput.files[0];
 
-    // Validación de peso (Máximo 2MB para evitar bloqueo de la base de datos en la nube)
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('⚠️ El video pesa más de 2MB. Sube un video más corto o comprimido.', 'error');
+    // Validación de peso (Máximo 3MB para la nube)
+    if (file.size > 3 * 1024 * 1024) {
+        showToast('⚠️ El video pesa más de 3MB. Sube uno más ligero.', 'error');
         return;
     }
 
-    const reader = new FileReader();
-    showToast('⏳ Subiendo video a la nube...', 'info');
+    // Validar duración máxima de 1 minuto (65 segundos con margen)
+    const videoElement = document.createElement('video');
+    videoElement.preload = 'metadata';
 
-    reader.onload = async function(e) {
-        const base64Video = e.target.result;
-        if (!db) {
-            showToast('Firebase no disponible.', 'error');
+    videoElement.onloadedmetadata = function() {
+        window.URL.revokeObjectURL(videoElement.src);
+        
+        if (videoElement.duration > 65) {
+            showToast('⏱️ El video dura más de 1 minuto. Sube uno más corto.', 'error');
             return;
         }
 
-        try {
-            await db.collection('tiktokVideos').add({
-                videoData: base64Video,
-                description: descInput,
-                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
-                authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-                authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
-                likes: [],
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        const reader = new FileReader();
+        showToast('⏳ Subiendo video a Videos Galactic...', 'info');
 
-            showToast('🎉 ¡Video publicado con éxito!');
-            closeUploadVideoModal();
-            fileInput.value = '';
-            document.getElementById('input-video-desc').value = '';
-            loadTikTokFeed();
-        } catch (err) {
-            console.log("Error guardando video:", err);
-            showToast('El archivo es demasiado pesado para la base de datos.', 'error');
-        }
+        reader.onload = async function(e) {
+            const base64Video = e.target.result;
+            if (!db) {
+                showToast('Firebase no disponible.', 'error');
+                return;
+            }
+
+            try {
+                await db.collection('tiktokVideos').add({
+                    videoData: base64Video,
+                    description: descInput,
+                    authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
+                    authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+                    authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
+                    likes: [],
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                showToast('🎉 ¡Video publicado en Videos Galactic!');
+                closeUploadVideoModal();
+                fileInput.value = '';
+                document.getElementById('input-video-desc').value = '';
+                loadTikTokFeed();
+            } catch (err) {
+                console.log("Error guardando video:", err);
+                showToast('El archivo es demasiado pesado para la base de datos.', 'error');
+            }
+        };
+
+        reader.readAsDataURL(file);
     };
 
-    reader.readAsDataURL(file);
+    videoElement.src = URL.createObjectURL(file);
 };
 
 function loadTikTokFeed() {
