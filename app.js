@@ -57,7 +57,6 @@ const MASSIVE_VOCABULARY_BANK = [
     { type: 'card', en: 'Problem Solving Skills', es: 'Habilidades de Resolución de Problemas', phonetic: 'Problem solving skils', category: 'Avanzado' }
 ];
 
-// BANCO EXACTO DE 20 PREGUNTAS ÚNICAS
 const BATTLE_QUESTIONS_BANK = [
     { q: '¿Cómo se dice "Vaca" en inglés?', img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=300', options: ['Cow', 'Horse', 'Pig', 'Sheep'], correct: 0 },
     { q: '¿Cómo se dice "Perro" en inglés?', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300', options: ['Cat', 'Dog', 'Rabbit', 'Fox'], correct: 1 },
@@ -97,10 +96,15 @@ function ensureUserUniqueId(userObj) {
     if (!userObj.userId || userObj.userId === 'MEYER_ID' || userObj.userId.includes('Cargando') || !userObj.userId.startsWith(cleanName)) {
         userObj.userId = `${cleanName}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     }
+    if (!userObj.avatarUrl) {
+        userObj.avatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+    }
+    if (!userObj.followers) userObj.followers = [];
+    if (!userObj.following) userObj.following = [];
 }
 
 // ==========================================
-// MÓDULO DE BATALLA 1VS1 (20 PREGUNTAS ÚNICAS SIN REPETIR)
+// MÓDULO DE BATALLA 1VS1
 // ==========================================
 let currentBattle = {
     mode: 'random',
@@ -172,7 +176,6 @@ window.startRealMatchmaking = async function() {
     }
 
     cleanupBattleListeners();
-
     const container = document.getElementById('lesson-content');
     if (!container) return;
 
@@ -183,18 +186,13 @@ window.startRealMatchmaking = async function() {
             </div>
             <div class="space-y-2">
                 <h3 class="text-xl font-black text-white">Buscando rival real en línea...</h3>
-                <p class="text-xs text-slate-300">Esperando a que otro usuario se conecte a la partida...</p>
+                <p class="text-xs text-slate-300">Esperando a que otro usuario se conecte...</p>
             </div>
-            <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
-                Cancelar y Salir ❌
-            </button>
+            <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">Cancelar ❌</button>
         </div>
     `;
 
-    if (!db) {
-        showToast('Error: Firebase no disponible.', 'error');
-        return;
-    }
+    if (!db) return;
 
     try {
         const queueRef = db.collection('battleQueue');
@@ -225,7 +223,7 @@ window.startRealMatchmaking = async function() {
 
             const hostData = foundDoc.data();
             currentBattle.rivalName = `${hostData.hostName} (${hostData.hostAvatar})`;
-            showToast('¡Rival encontrado! Iniciando batalla real...', 'success');
+            showToast('¡Rival encontrado! Comienza la batalla.', 'success');
             initActualRealBattle();
         } else {
             const newRoomRef = queueRef.doc();
@@ -237,9 +235,7 @@ window.startRealMatchmaking = async function() {
                 hostId: currentUser.userId,
                 hostName: currentUser.name || 'Meyer',
                 hostAvatar: selectedAvatar,
-                guestId: null,
-                guestName: null,
-                guestAvatar: null,
+                guestId: null, guestName: null, guestAvatar: null,
                 status: 'waiting',
                 questionIndex: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -250,14 +246,13 @@ window.startRealMatchmaking = async function() {
                 if (data && data.status === 'playing' && data.guestId) {
                     if (matchmakingUnsubscribe) matchmakingUnsubscribe();
                     currentBattle.rivalName = `${data.guestName} (${data.guestAvatar})`;
-                    showToast(`¡${data.guestName} se unió! Comienza el duelo.`, 'success');
+                    showToast(`¡${data.guestName} se unió!`, 'success');
                     initActualRealBattle();
                 }
             });
         }
     } catch (e) {
-        console.log("Error en emparejamiento:", e);
-        showToast('Error conectando a la sala de batalla.', 'error');
+        console.log("Error emparejamiento:", e);
     }
 };
 
@@ -267,7 +262,7 @@ window.startPrivateRoomMatch = async function() {
     const roomPass = document.getElementById('war-room-pass')?.value.trim();
 
     if (!roomName || !roomPass) {
-        showToast('Ingresa nombre y contraseña de sala privada.', 'error');
+        showToast('Ingresa nombre y contraseña de sala.', 'error');
         return;
     }
 
@@ -290,16 +285,13 @@ window.startPrivateRoomMatch = async function() {
             </div>
             <div class="space-y-2">
                 <h3 class="text-xl font-black text-white">Sala: ${roomName}</h3>
-                <p class="text-xs text-slate-300">Esperando contrincante con la misma contraseña...</p>
+                <p class="text-xs text-slate-300">Esperando contrincante...</p>
             </div>
-            <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
-                Salir ❌
-            </button>
+            <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-white font-bold text-xs rounded-xl transition">Salir ❌</button>
         </div>
     `;
 
     if (!db) return;
-
     const roomRef = db.collection('battleQueue').doc(activeBattleDocId);
     const docSnap = await roomRef.get();
 
@@ -319,7 +311,7 @@ window.startPrivateRoomMatch = async function() {
             if (data && data.status === 'playing' && data.guestId) {
                 if (matchmakingUnsubscribe) matchmakingUnsubscribe();
                 currentBattle.rivalName = `${data.guestName} (${data.guestAvatar})`;
-                showToast(`¡Rival conectado en sala privada!`, 'success');
+                showToast('¡Rival conectado en sala privada!', 'success');
                 initActualRealBattle();
             }
         });
@@ -333,7 +325,7 @@ window.startPrivateRoomMatch = async function() {
             status: 'playing'
         });
         currentBattle.rivalName = `${data.hostName} (${data.hostAvatar})`;
-        showToast('¡Conectado a sala privada con éxito!', 'success');
+        showToast('¡Conectado a sala privada!', 'success');
         initActualRealBattle();
     }
 };
@@ -354,7 +346,6 @@ function renderBattleQuestion() {
 
     const qData = currentBattle.questions[currentBattle.questionIndex];
     currentBattle.timer = 10;
-
     const container = document.getElementById('lesson-content');
     if (!container) return;
 
@@ -379,16 +370,12 @@ function renderBattleQuestion() {
 
             <div class="grid grid-cols-2 gap-2">
                 ${qData.options.map((opt, idx) => `
-                    <button onclick="handleBattleAnswer(${idx}, ${qData.correct})" class="battle-opt py-3 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs rounded-xl transition text-center shadow">
-                        ${opt}
-                    </button>
+                    <button onclick="handleBattleAnswer(${idx}, ${qData.correct})" class="battle-opt py-3 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs rounded-xl transition text-center shadow">${opt}</button>
                 `).join('')}
             </div>
 
             <div class="text-center pt-2">
-                <button onclick="exitBattleMatch()" class="px-4 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
-                    Salir / Cerrar Batalla ❌
-                </button>
+                <button onclick="exitBattleMatch()" class="px-4 py-2 bg-slate-800 hover:bg-rose-600 text-white font-bold text-xs rounded-xl transition">Salir ❌</button>
             </div>
         </div>
     `;
@@ -446,9 +433,7 @@ async function advanceQuestionInCloud() {
             await db.collection('battleQueue').doc(activeBattleDocId).update({
                 questionIndex: currentBattle.questionIndex
             });
-        } catch (e) {
-            console.log("Error avanzando pregunta en nube:", e);
-        }
+        } catch (e) {}
     }
     renderBattleQuestion();
 }
@@ -480,9 +465,7 @@ window.handleBattleAnswer = async function(selectedIdx, correctIdx) {
             const updateObj = currentBattle.isHost ? { hostScore: currentBattle.score } : { guestScore: currentBattle.score };
             updateObj.questionIndex = currentBattle.questionIndex + 1;
             await db.collection('battleQueue').doc(activeBattleDocId).update(updateObj);
-        } catch (e) {
-            console.log("Error actualizando score en nube:", e);
-        }
+        } catch (e) {}
     }
 
     setTimeout(() => {
@@ -492,25 +475,16 @@ window.handleBattleAnswer = async function(selectedIdx, correctIdx) {
 };
 
 function cleanupBattleListeners() {
-    if (matchmakingUnsubscribe) {
-        matchmakingUnsubscribe();
-        matchmakingUnsubscribe = null;
-    }
-    if (battleStateUnsubscribe) {
-        battleStateUnsubscribe();
-        battleStateUnsubscribe = null;
-    }
-    if (currentBattle.timerInterval) {
-        clearInterval(currentBattle.timerInterval);
-        currentBattle.timerInterval = null;
-    }
+    if (matchmakingUnsubscribe) { matchmakingUnsubscribe(); matchmakingUnsubscribe = null; }
+    if (battleStateUnsubscribe) { battleStateUnsubscribe(); battleStateUnsubscribe = null; }
+    if (currentBattle.timerInterval) { clearInterval(currentBattle.timerInterval); currentBattle.timerInterval = null; }
 }
 
 window.exitBattleMatch = function() {
     cleanupBattleListeners();
     const modal = document.getElementById('view-lesson-modal');
     if (modal) modal.classList.add('hidden');
-    showToast('Batalla finalizada correctamente.', 'info');
+    showToast('Batalla finalizada.', 'info');
 };
 
 function finishBattleMatch() {
@@ -534,318 +508,53 @@ function finishBattleMatch() {
             <div class="text-5xl">${won ? '🥇' : '📖'}</div>
             <h3 class="text-2xl font-black text-white">${resultMessage}</h3>
             <p class="text-xs text-slate-300">Tus puntos: <b>${currentBattle.score}</b> | Puntos de ${currentBattle.rivalName}: <b>${currentBattle.rivalScore}</b></p>
-            <button onclick="document.getElementById('view-lesson-modal').classList.add('hidden')" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">
-                Finalizar y Reclamar XP 🚀
-            </button>
+            <button onclick="document.getElementById('view-lesson-modal').classList.add('hidden')" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">Finalizar 🚀</button>
         </div>
     `;
 }
 
 // ==========================================
-// MÓDULO DE CHAT PRIVADO & BÚSQUEDA POR ID
-// ==========================================
-function renderPrivateChat() {
-    const secPrivate = document.getElementById('sec-private-chat');
-    if (!secPrivate) return;
-
-    if (currentUser) {
-        ensureUserUniqueId(currentUser);
-        saveCurrentUserData();
-    }
-
-    const currentUserIdDisplay = currentUser && currentUser.userId ? currentUser.userId : 'MEYER_ID';
-
-    secPrivate.innerHTML = `
-        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-[550px]">
-            <div id="private-sidebar-panel" class="lg:block border-r border-slate-200 dark:border-slate-700 pr-2 space-y-3 flex flex-col h-full overflow-hidden">
-                <div class="bg-slate-900/60 p-3 rounded-2xl border border-slate-700/50 space-y-2">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-400">Buscar / Añadir por ID</h4>
-                    <div class="flex gap-2">
-                        <input type="text" id="private-target-email" placeholder="Ej. CARLOS_9X1P" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none focus:border-indigo-500 font-mono">
-                        <button onclick="searchAndVerifyFriendId()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shrink-0">Buscar</button>
-                    </div>
-                    <div id="search-friend-result-card" class="hidden pt-2 border-t border-slate-800 mt-2 space-y-2"></div>
-                </div>
-
-                <div class="flex-1 overflow-y-auto space-y-1">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mt-2 mb-1 px-1">Mis Conversaciones</h4>
-                    <div id="private-chats-list" class="space-y-1.5"></div>
-                </div>
-            </div>
-
-            <div id="private-chatbox-panel" class="lg:col-span-2 flex flex-col h-[500px] lg:h-full bg-slate-900/50 rounded-2xl p-3 border border-slate-700 relative">
-                <div class="lg:hidden pb-2 mb-1 border-b border-slate-800 flex items-center justify-between">
-                    <button onclick="backToPrivateContacts()" class="text-xs bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl font-bold flex items-center space-x-1">
-                        <i class="fa-solid fa-arrow-left"></i><span>Volver a Amigos</span>
-                    </button>
-                    <span class="text-[10px] text-emerald-400 font-bold">🟢 Conectado</span>
-                </div>
-
-                <div class="p-2 border-b border-slate-700/80 font-bold text-xs text-white flex justify-between items-center flex-wrap gap-2">
-                    <div class="flex items-center space-x-2">
-                        <span id="private-chat-header" class="truncate max-w-[180px] sm:max-w-xs">💬 Selecciona un chat privado</span>
-                        <span id="chat-active-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div id="chat-extra-actions" class="hidden flex items-center space-x-1">
-                            <button onclick="clearCurrentPrivateChatHistory()" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                        <div class="flex items-center space-x-2 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
-                            <span class="text-[10px] text-emerald-400 font-mono" id="my-display-id-badge">Mi ID: ${currentUser?.userId || currentUserIdDisplay}</span>
-                            <button onclick="copyMyUserId('${currentUser?.userId || currentUserIdDisplay}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition px-1"><i class="fa-solid fa-copy"></i></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="private-messages-container" class="flex-1 p-3 overflow-y-auto space-y-3 my-2 min-h-[250px]">
-                    <div class="text-center text-slate-400 mt-20 space-y-2">
-                        <div class="text-3xl">💬</div>
-                        <p class="text-xs">Busca un ID arriba o elige un contacto para chatear en tiempo real.</p>
-                    </div>
-                </div>
-
-                <form id="private-send-form" class="pt-2 border-t border-slate-700/80 flex space-x-2 mt-auto">
-                    <input type="text" id="private-input-text" placeholder="Escribe un mensaje..." required disabled class="flex-1 px-3 py-2.5 rounded-xl bg-slate-900 text-xs text-white outline-none border border-slate-700 disabled:opacity-50">
-                    <button type="button" onclick="startSpeechRecognition(txt => document.getElementById('private-input-text').value = txt, 'es-ES')" class="bg-slate-800 text-white px-3.5 py-2.5 rounded-xl text-xs hover:bg-slate-700 transition"><i class="fa-solid fa-microphone"></i></button>
-                    <button type="submit" id="private-send-btn" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs disabled:opacity-50 transition shadow">Enviar</button>
-                </form>
-            </div>
-        </div>
-    `;
-    renderSavedPrivateContactsList();
-
-    if (window.innerWidth < 1024) {
-        toggleMobilePrivateView('list');
-    }
-}
-
-window.searchAndVerifyFriendId = function() {
-    const input = document.getElementById('private-target-email');
-    const resultCard = document.getElementById('search-friend-result-card');
-    const targetId = input ? input.value.trim().toUpperCase() : '';
-
-    if (!targetId) {
-        showToast('Ingresa un ID para buscar.', 'info');
-        if (resultCard) resultCard.classList.add('hidden');
-        return;
-    }
-
-    if (currentUser.userId === targetId) {
-        showToast('Ese es tu propio ID.', 'info');
-        if (resultCard) resultCard.classList.add('hidden');
-        return;
-    }
-
-    if (resultCard) {
-        resultCard.classList.remove('hidden');
-        resultCard.innerHTML = `
-            <div class="p-3 bg-slate-950 rounded-xl border border-indigo-500/40 flex items-center justify-between gap-2 shadow-md">
-                <div class="flex items-center space-x-2 truncate">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
-                        <i class="fa-solid fa-user-check"></i>
-                    </div>
-                    <div class="truncate">
-                        <p class="text-xs font-bold text-white font-mono truncate">${targetId}</p>
-                        <p class="text-[10px] text-emerald-400">ID Válido encontrado</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-1 shrink-0">
-                    <button onclick="addFoundFriend('${targetId}')" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg transition shadow">Agregar</button>
-                    <button onclick="openPrivateChat('${targetId}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-lg transition shadow">Chatear</button>
-                </div>
-            </div>
-        `;
-    }
-    showToast(`🔍 ID ${targetId} localizado correctamente.`);
-};
-
-window.addFoundFriend = function(targetId) {
-    if (!currentUser.friends) currentUser.friends = [];
-    if (!currentUser.friends.includes(targetId)) {
-        currentUser.friends.push(targetId);
-        saveCurrentUserData();
-        renderSavedPrivateContactsList();
-        showToast(`✅ Amigo ${targetId} agregado a tu lista.`);
-    } else {
-        showToast('Este amigo ya se encuentra en tu lista.', 'info');
-    }
-    const resultCard = document.getElementById('search-friend-result-card');
-    if (resultCard) resultCard.classList.add('hidden');
-    const input = document.getElementById('private-target-email');
-    if (input) input.value = '';
-    openPrivateChat(targetId);
-};
-
-window.toggleMobilePrivateView = function(view) {
-    if (window.innerWidth >= 1024) return;
-    const sidebar = document.getElementById('private-sidebar-panel');
-    const chatbox = document.getElementById('private-chatbox-panel');
-    if (!sidebar || !chatbox) return;
-
-    if (view === 'list') {
-        sidebar.classList.remove('hidden');
-        chatbox.classList.add('hidden');
-    } else {
-        sidebar.classList.add('hidden');
-        chatbox.classList.remove('hidden');
-    }
-};
-
-window.backToPrivateContacts = function() {
-    toggleMobilePrivateView('list');
-};
-
-window.copyMyUserId = function(idText) {
-    const cleanId = idText.replace('Tu ID: ', '').replace('Mi ID: ', '').replace('ID: ', '').trim();
-    navigator.clipboard.writeText(cleanId).then(() => {
-        showToast('📋 ¡ID copiado al portapapeles!');
-    }).catch(() => {
-        showToast('No se pudo copiar automáticamente.', 'error');
-    });
-};
-
-function renderSavedPrivateContactsList() {
-    const container = document.getElementById('private-chats-list');
-    if (!container || !currentUser) return;
-    const friends = currentUser.friends || [];
-
-    if (friends.length === 0) {
-        container.innerHTML = `
-            <div class="p-4 text-center border border-dashed border-slate-700 rounded-2xl bg-slate-900/40">
-                <p class="text-[11px] text-slate-400">No tienes amigos agregados aún.<br>Busca un ID arriba para conectar.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = friends.map(friendId => `
-        <div onclick="openPrivateChat('${friendId}')" class="p-3 bg-slate-800/90 hover:bg-slate-700 rounded-2xl cursor-pointer text-xs font-bold text-white flex items-center justify-between transition border border-slate-700/60 shadow-sm group">
-            <div class="flex items-center space-x-2.5 truncate">
-                <div class="w-8 h-8 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-black text-xs shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <span class="truncate font-mono">${friendId}</span>
-            </div>
-            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 shrink-0"></i>
-        </div>
-    `).join('');
-}
-
-window.openPrivateChat = function(friendId) {
-    if (!currentUser || !currentUser.userId) return;
-    
-    activePrivateChatId = [currentUser.userId.trim(), friendId.trim()].sort().join('_');
-    
-    document.getElementById('private-chat-header').innerText = `💬 Chat con: ${friendId}`;
-    document.getElementById('private-input-text').disabled = false;
-    document.getElementById('private-send-btn').disabled = false;
-
-    const badge = document.getElementById('chat-active-badge');
-    if (badge) badge.classList.remove('hidden');
-    const extraActions = document.getElementById('chat-extra-actions');
-    if (extraActions) extraActions.classList.remove('hidden');
-
-    toggleMobilePrivateView('chat');
-
-    if (privateUnsubscribe) privateUnsubscribe();
-
-    if (db) {
-        privateUnsubscribe = db.collection('privateChats').doc(activePrivateChatId).collection('messages')
-            .orderBy('timestamp', 'asc')
-            .onSnapshot(snapshot => {
-                let html = '';
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const isMe = msg.sender === currentUser.userId;
-                    html += `
-                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-0.5">
-                            <div class="p-3 rounded-2xl max-w-[85%] sm:max-w-xs text-xs shadow ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}">
-                                ${msg.text}
-                            </div>
-                            <span class="text-[9px] text-slate-400 px-1">${msg.time}</span>
-                        </div>
-                    `;
-                });
-                const container = document.getElementById('private-messages-container');
-                if (container) {
-                    container.innerHTML = html || '<p class="text-xs text-center text-slate-400 mt-16">Envía tu primer mensaje para iniciar la conversación 👋</p>';
-                    container.scrollTop = container.scrollHeight;
-                }
-            });
-    }
-
-    const form = document.getElementById('private-send-form');
-    if (form) {
-        form.onsubmit = (e) => {
-            e.preventDefault();
-            const input = document.getElementById('private-input-text');
-            const text = input.value.trim();
-            if (!text || !activePrivateChatId) return;
-
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            if (db) {
-                db.collection('privateChats').doc(activePrivateChatId).collection('messages').add({
-                    sender: currentUser.userId,
-                    text, time: timeStr,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => { input.value = ''; });
-            }
-        };
-    }
-};
-
-window.clearCurrentPrivateChatHistory = function() {
-    if (!activePrivateChatId) return;
-    if (confirm('¿Deseas limpiar todos los mensajes de esta conversación?')) {
-        showToast('Conversación limpiada localmente.', 'info');
-        const container = document.getElementById('private-messages-container');
-        if (container) container.innerHTML = '<p class="text-xs text-center text-slate-400 mt-16">Historial limpiado 👋</p>';
-    }
-};
-
-// ==========================================
-// MÓDULO DE VIDEOS ESTILO TIKTOK (EN TIEMPO REAL)
+// MÓDULO DE VIDEOS ESTILO TIKTOK (DESDE CARPETA LOCAL / ARCHIVO)
 // ==========================================
 function renderTikTokSection() {
-    const secLive = document.getElementById('sec-live');
-    if (!secLive) return;
+    const secVideos = document.getElementById('sec-videos');
+    if (!secVideos) return;
 
-    secLive.innerHTML = `
+    secVideos.innerHTML = `
         <div class="max-w-md mx-auto bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col h-[650px] relative">
             <div class="absolute top-0 inset-x-0 z-20 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/80 to-transparent">
                 <span class="text-xs font-bold text-slate-400">Siguiendo</span>
                 <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Para ti 🎬</span>
-                <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/80 p-2 rounded-full border border-slate-700 shadow transition">
-                    <i class="fa-solid fa-video text-xs"></i>
+                <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/80 p-2 rounded-full border border-slate-700 shadow transition flex items-center space-x-1">
+                    <i class="fa-solid fa-plus text-xs"></i><span class="text-[10px] font-bold">Subir</span>
                 </button>
             </div>
 
             <div id="tiktok-feed-container" class="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none relative">
                 <div class="flex items-center justify-center h-full text-slate-400 text-xs">
-                    <i class="fa-solid fa-spinner animate-spin mr-2"></i> Cargando videos de la comunidad...
+                    <i class="fa-solid fa-spinner animate-spin mr-2"></i> Cargando videos...
                 </div>
             </div>
         </div>
 
+        <!-- MODAL PARA SUBIR VIDEO DESDE ARCHIVO -->
         <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-black text-white">📤 Subir Nuevo Video</h3>
+                    <h3 class="text-base font-black text-white">📤 Subir Video de la Carpeta</h3>
                     <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Enlace del Video (MP4 / YouTube Shorts / URL)</label>
-                        <input type="text" id="input-video-url" placeholder="https://..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500">
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (MP4 / AVI / MOV)</label>
+                        <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
                         <label class="text-[10px] uppercase font-bold text-slate-400">Descripción del Video</label>
-                        <textarea id="input-video-desc" rows="2" placeholder="¿De qué trata tu video? #tags" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
+                        <textarea id="input-video-desc" rows="2" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button onclick="publishTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">
-                    Publicar Video 🚀
-                </button>
+                <button onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar Video 🚀</button>
             </div>
         </div>
     `;
@@ -854,48 +563,57 @@ function renderTikTokSection() {
 }
 
 window.openUploadVideoModal = function() {
-    const modal = document.getElementById('upload-video-modal');
-    if (modal) modal.classList.remove('hidden');
+    document.getElementById('upload-video-modal')?.classList.remove('hidden');
 };
 
 window.closeUploadVideoModal = function() {
-    const modal = document.getElementById('upload-video-modal');
-    if (modal) modal.classList.add('hidden');
+    document.getElementById('upload-video-modal')?.classList.add('hidden');
 };
 
-window.publishTikTokVideo = async function() {
-    const urlInput = document.getElementById('input-video-url').value.trim();
+window.publishLocalTikTokVideo = function() {
+    const fileInput = document.getElementById('input-local-video-file');
     const descInput = document.getElementById('input-video-desc').value.trim();
 
-    if (!urlInput || !descInput) {
-        showToast('Completa el enlace y la descripción.', 'error');
+    if (!fileInput.files || fileInput.files.length === 0 || !descInput) {
+        showToast('Selecciona un archivo de video y escribe una descripción.', 'error');
         return;
     }
 
-    if (!db) {
-        showToast('Firebase no disponible.', 'error');
-        return;
-    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-    try {
-        await db.collection('tiktokVideos').add({
-            videoUrl: urlInput,
-            description: descInput,
-            authorName: currentUser ? (currentUser.name || 'Meyer') : 'Usuario',
-            authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-            likes: [],
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+    showToast('⏳ Preparando video...', 'info');
 
-        showToast('🎉 ¡Video publicado con éxito!');
-        closeUploadVideoModal();
-        document.getElementById('input-video-url').value = '';
-        document.getElementById('input-video-desc').value = '';
-        loadTikTokFeed();
-    } catch (e) {
-        console.log("Error publicando video:", e);
-        showToast('Error al publicar el video.', 'error');
-    }
+    reader.onload = async function(e) {
+        const base64Video = e.target.result;
+        if (!db) {
+            showToast('Firebase no disponible.', 'error');
+            return;
+        }
+
+        try {
+            await db.collection('tiktokVideos').add({
+                videoData: base64Video,
+                description: descInput,
+                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Usuario',
+                authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+                authorAvatar: currentUser ? (currentUser.avatarUrl || '') : '',
+                likes: [],
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast('🎉 ¡Video subido con éxito!');
+            closeUploadVideoModal();
+            fileInput.value = '';
+            document.getElementById('input-video-desc').value = '';
+            loadTikTokFeed();
+        } catch (err) {
+            console.log("Error guardando video:", err);
+            showToast('El video es muy pesado para la base de datos o hubo un error.', 'error');
+        }
+    };
+
+    reader.readAsDataURL(file);
 };
 
 function loadTikTokFeed() {
@@ -907,7 +625,7 @@ function loadTikTokFeed() {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 p-6 text-center">
                     <div class="text-3xl">📭</div>
-                    <p class="text-xs">Aún no hay videos publicados. ¡Sé el primero en subir uno con el botón superior!</p>
+                    <p class="text-xs">No hay videos aún. ¡Sube el primero desde tu dispositivo!</p>
                 </div>
             `;
             return;
@@ -919,15 +637,12 @@ function loadTikTokFeed() {
             const videoId = doc.id;
             const likesCount = data.likes ? data.likes.length : 0;
             const isLiked = currentUser && data.likes && data.likes.includes(currentUser.userId);
+            const isFollowing = currentUser && currentUser.following && currentUser.following.includes(data.authorId);
 
             html += `
                 <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black border-b border-slate-900">
                     <div class="absolute inset-0 z-0 flex items-center justify-center bg-slate-950 overflow-hidden">
-                        ${data.videoUrl.includes('youtube.com') || data.videoUrl.includes('youtu.be') ? `
-                            <iframe src="${data.videoUrl}" class="w-full h-full pointer-events-none object-cover" frameborder="0"></iframe>
-                        ` : `
-                            <video src="${data.videoUrl}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
-                        `}
+                        <video src="${data.videoData || ''}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>
                     </div>
 
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none z-10"></div>
@@ -947,8 +662,13 @@ function loadTikTokFeed() {
 
                     <div class="relative z-20 space-y-1.5 pb-2 pr-14">
                         <div class="flex items-center space-x-2">
+                            <img src="${data.authorAvatar || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150'}" class="w-7 h-7 rounded-full object-cover border border-slate-600">
                             <span class="text-xs font-black text-white font-mono">@${data.authorName}</span>
-                            <button onclick="followAuthor('${data.authorId}')" class="px-2.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded-full transition shadow">Seguir</button>
+                            ${currentUser && currentUser.userId !== data.authorId ? `
+                                <button onclick="toggleFollowUser('${data.authorId}')" class="px-2.5 py-0.5 ${isFollowing ? 'bg-slate-700 text-slate-300' : 'bg-rose-600 hover:bg-rose-500 text-white'} font-bold text-[10px] rounded-full transition shadow">
+                                    ${isFollowing ? 'Siguiendo' : 'Seguir'}
+                                </button>
+                            ` : ''}
                         </div>
                         <p class="text-xs text-slate-200 leading-snug">${data.description}</p>
                     </div>
@@ -977,24 +697,104 @@ window.toggleVideoLike = async function(videoId) {
     await ref.update({ likes });
 };
 
-window.followAuthor = function(authorId) {
+window.toggleFollowUser = function(authorId) {
     if (!currentUser) return;
-    if (!currentUser.friends) currentUser.friends = [];
-    if (!currentUser.friends.includes(authorId)) {
-        currentUser.friends.push(authorId);
-        saveCurrentUserData();
-        showToast(`✅ Ahora sigues a @${authorId}`);
+    if (!currentUser.following) currentUser.following = [];
+
+    if (currentUser.following.includes(authorId)) {
+        currentUser.following = currentUser.following.filter(id => id !== authorId);
+        showToast('Dejaste de seguir al usuario.', 'info');
     } else {
-        showToast('Ya sigues a este usuario.', 'info');
+        currentUser.following.push(authorId);
+        showToast('✅ ¡Ahora sigues a este usuario!');
     }
+    saveCurrentUserData();
+    loadTikTokFeed();
 };
 
 window.openVideoComments = function(videoId) {
-    showToast('💬 Módulo de comentarios en tiempo real sincronizado.', 'info');
+    showToast('💬 Comentarios sincronizados en tiempo real.', 'info');
 };
 
 // ==========================================
-// UTILIDADES, AUDIO Y DICCIONARIO
+// MÓDULO DE PERFIL DE USUARIO (FOTO Y SEGUIDORES)
+// ==========================================
+function renderProfileSection() {
+    const secProfile = document.getElementById('sec-profile');
+    if (!secProfile || !currentUser) return;
+
+    ensureUserUniqueId(currentUser);
+
+    secProfile.innerHTML = `
+        <div class="max-w-md mx-auto bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-xl space-y-6 text-white text-center">
+            <div class="relative w-24 h-24 mx-auto group">
+                <img id="user-profile-avatar-img" src="${currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150'}" class="w-24 h-24 rounded-full object-cover border-4 border-indigo-600 shadow-lg">
+                <label class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition text-white text-xs font-bold">
+                    Cambiar <input type="file" accept="image/*" onchange="updateProfileAvatar(event)" class="hidden">
+                </label>
+            </div>
+
+            <div class="space-y-1">
+                <h3 class="text-xl font-black">${currentUser.name || 'Meyer'}</h3>
+                <p class="text-xs font-mono text-indigo-400">ID: ${currentUser.userId}</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                <div>
+                    <span class="block text-sm font-black text-white">${currentUser.xp || 50}</span>
+                    <span class="text-[10px] uppercase text-slate-400 font-bold">XP</span>
+                </div>
+                <div>
+                    <span class="block text-sm font-black text-white">${(currentUser.following || []).length}</span>
+                    <span class="text-[10px] uppercase text-slate-400 font-bold">Siguiendo</span>
+                </div>
+                <div>
+                    <span class="block text-sm font-black text-white">${(currentUser.followers || []).length}</span>
+                    <span class="text-[10px] uppercase text-slate-400 font-bold">Seguidores</span>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-left">
+                <label class="text-[10px] uppercase font-bold text-slate-400">Editar Nombre</label>
+                <div class="flex gap-2">
+                    <input type="text" id="input-edit-username" value="${currentUser.name || ''}" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-indigo-500">
+                    <button onclick="saveProfileName()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">Guardar</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.updateProfileAvatar = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        currentUser.avatarUrl = e.target.result;
+        saveCurrentUserData();
+        renderProfileSection();
+        showToast('📸 ¡Foto de perfil actualizada!');
+    };
+    reader.readAsDataURL(file);
+};
+
+window.saveProfileName = function() {
+    const newName = document.getElementById('input-edit-username')?.value.trim();
+    if (!newName) {
+        showToast('Ingresa un nombre válido.', 'error');
+        return;
+    }
+    currentUser.name = newName;
+    ensureUserUniqueId(currentUser);
+    saveCurrentUserData();
+    renderProfileSection();
+    updateUI();
+    showToast('✅ ¡Nombre actualizado con éxito!');
+};
+
+// ==========================================
+// UTILIDADES Y AUTENTICACIÓN
 // ==========================================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -1016,10 +816,10 @@ function startSpeechRecognition(callback, lang = 'en-US') {
     const recognition = new SpeechRecognition();
     recognition.lang = lang;
     recognition.interimResults = false;
-    showToast('🎙️ Escuchando... Habla ahora', 'info');
+    showToast('🎙️ Escuchando...', 'info');
 
     recognition.onresult = (event) => { callback(event.results[0][0].transcript); };
-    recognition.onerror = () => { showToast('No se logró escuchar claramente.', 'info'); };
+    recognition.onerror = () => { showToast('No se logró escuchar.', 'info'); };
     recognition.start();
 }
 
@@ -1055,25 +855,19 @@ function initAuth() {
 }
 
 function showAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    const dash = document.getElementById('view-dashboard');
-    if (modal) modal.classList.remove('hidden');
-    if (dash) dash.classList.add('hidden');
+    document.getElementById('auth-modal')?.classList.remove('hidden');
+    document.getElementById('view-dashboard')?.classList.add('hidden');
 }
 
 function showMainApp() {
-    const modal = document.getElementById('auth-modal');
-    const dash = document.getElementById('view-dashboard');
-    const logoutBtn = document.getElementById('btn-logout');
-    if (modal) modal.classList.add('hidden');
-    if (dash) dash.classList.remove('hidden');
-    if (logoutBtn) logoutBtn.classList.remove('hidden');
+    document.getElementById('auth-modal')?.classList.add('hidden');
+    document.getElementById('view-dashboard')?.classList.remove('hidden');
+    document.getElementById('btn-logout')?.classList.remove('hidden');
     updateUI();
 }
 
 function updateUI() {
     if (!currentUser) return;
-
     ensureUserUniqueId(currentUser);
     saveCurrentUserData();
 
@@ -1087,10 +881,7 @@ function updateUI() {
     if (xpCount) xpCount.innerText = currentUser.xp || 0;
     if (streakCount) streakCount.innerText = currentUser.streak || 1;
 
-    const headerTopBadge = document.getElementById('header-top-id-badge');
-    if (headerTopBadge) {
-        headerTopBadge.remove();
-    }
+    document.getElementById('header-top-id-badge')?.remove();
 
     let cardIdBadge = document.getElementById('card-user-id');
     if (!cardIdBadge) {
@@ -1116,6 +907,7 @@ function updateUI() {
     renderGlobalChat();
     renderPrivateChat();
     renderTikTokSection();
+    renderProfileSection();
 }
 
 function getUnseenItems(categoryFilter) {
@@ -1145,26 +937,20 @@ function renderLessons() {
             <div class="mb-4 sm:mb-0">
                 <span class="px-3 py-1 bg-white/25 backdrop-blur-md rounded-full text-xs font-bold uppercase">¡Modo Duelo 1vs1!</span>
                 <h3 class="text-2xl font-black mt-2">⚔️ Guerra de Inglés con Micrófono</h3>
-                <p class="text-xs text-rose-100 mt-1">20 Preguntas únicas y sincronización en tiempo real.</p>
+                <p class="text-xs text-rose-100 mt-1">20 Preguntas únicas y sincronizadas en tiempo real.</p>
             </div>
-            <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition transform active:scale-95 shrink-0">
-                ¡Lanzar Batalla! ⚔️
-            </button>
+            <button onclick="openWarSetup()" class="px-6 py-3.5 bg-white text-rose-600 font-black text-sm rounded-2xl shadow-lg transition transform active:scale-95 shrink-0">¡Lanzar Batalla! ⚔️</button>
         </div>
     `;
 
     html += categories.map(cat => `
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 transition shadow-sm flex flex-col justify-between">
             <div>
-                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center text-xl mb-3">
-                    <i class="fa-solid ${cat.icon}"></i>
-                </div>
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center text-xl mb-3"><i class="fa-solid ${cat.icon}"></i></div>
                 <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">${cat.category}</span>
                 <h3 class="font-bold text-lg text-slate-800 dark:text-white mt-1">${cat.title}</h3>
             </div>
-            <button data-category="${cat.category}" class="btn-start-dynamic mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md">
-                Iniciar Práctica
-            </button>
+            <button data-category="${cat.category}" class="btn-start-dynamic mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md">Iniciar Práctica</button>
         </div>
     `).join('');
 
@@ -1338,7 +1124,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentUser = { 
                     email, password, name, xp: 50, streak: 1, 
-                    customWords: [], seenHistory: [], friends: [] 
+                    customWords: [], seenHistory: [], friends: [], followers: [], following: [],
+                    avatarUrl: 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150'
                 };
                 ensureUserUniqueId(currentUser);
                 data[email] = currentUser;
@@ -1364,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.onclick = () => { localStorage.removeItem('meyer_app_active_email'); showAuthModal(); };
     }
 
-    ['lessons', 'dictionary', 'chat', 'private-chat', 'live'].forEach(tab => {
+    ['lessons', 'dictionary', 'chat', 'private-chat', 'videos', 'profile', 'live'].forEach(tab => {
         const btn = document.getElementById(`tab-${tab}`);
         if (btn) btn.onclick = () => switchTab(tab);
     });
@@ -1412,14 +1199,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function switchTab(tab) {
-    ['lessons', 'dictionary', 'chat', 'private-chat', 'live'].forEach(t => {
+    ['lessons', 'dictionary', 'chat', 'private-chat', 'videos', 'profile', 'live'].forEach(t => {
         const sec = document.getElementById(`sec-${t}`);
         const tabBtn = document.getElementById(`tab-${t}`);
         if (sec) sec.classList.toggle('hidden', t !== tab);
         if (tabBtn) tabBtn.classList.toggle('active', t === tab);
     });
 
-    if (tab === 'live') {
+    if (tab === 'videos') {
         renderTikTokSection();
+    } else if (tab === 'profile') {
+        renderProfileSection();
     }
 }
