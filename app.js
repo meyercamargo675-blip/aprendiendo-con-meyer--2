@@ -1476,3 +1476,35 @@ function switchTab(tab) {
         renderProfileSection();
     }
 }
+
+// ==========================================
+// CORRECCIÓN DE CLICS Y CIERRE DE MODALES
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Asegurar que los botones de cerrar (X) funcionen en cualquier modal
+    const closeButtons = document.querySelectorAll('[onclick*="hidden"], .fa-xmark, [id*="close"]');
+    closeButtons.forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+        btn.style.zIndex = '99999';
+    });
+
+    // Liberar bloqueos de capas fantasma en el chat global y pestañas
+    const chatSec = document.getElementById('sec-chat');
+    if (chatSec) chatSec.style.pointerEvents = 'auto';
+
+    const globalOverlay = document.createElement('style');
+    globalOverlay.innerHTML = `
+        button, a, input, textarea, select, .cursor-pointer {
+            pointer-events: auto !important;
+        }
+        .fixed, .absolute {
+            /* Evita que capas vacías bloqueen los clics debajo */
+            pointer-events: none;
+        }
+        /* Excepto los elementos interactivos dentro de los contenedores flotantes */
+        .fixed *, .absolute * {
+            pointer-events: auto;
+        }
+    `;
+    document.head.appendChild(globalOverlay);
+});
