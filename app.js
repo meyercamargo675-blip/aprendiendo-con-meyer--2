@@ -76,6 +76,9 @@ let currentLesson = null;
 let currentStepIndex = 0;
 let activePrivateChatId = null;
 let privateUnsubscribe = null;
+let matchmakingUnsubscribe = null;
+let activeBattleDocId = null;
+let battleStateUnsubscribe = null;
 
 function ensureUserUniqueId(userObj) {
     if (!userObj) return;
@@ -86,15 +89,15 @@ function ensureUserUniqueId(userObj) {
 }
 
 // ==========================================
-// MÓDULO DE BATALLA 1VS1 (CORREGIDO Y SIN BUCLES)
+// MÓDULO DE BATALLA 1VS1 (REAL EN LA NUBE)
 // ==========================================
 let currentBattle = {
     mode: 'random',
-    roomName: '',
-    roomPass: '',
+    battleId: '',
+    isHost: false,
     score: 0,
     rivalScore: 0,
-    rivalName: 'Rival Oculto',
+    rivalName: 'Esperando rival real...',
     questionIndex: 0,
     timer: 10,
     timerInterval: null,
@@ -112,8 +115,8 @@ window.openWarSetup = function() {
             <div class="w-16 h-16 bg-rose-600/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto text-2xl font-black">
                 <i class="fa-solid fa-gamepad"></i>
             </div>
-            <h3 class="text-2xl font-extrabold text-white">⚔️ Guerra de Inglés 1vs1</h3>
-            <p class="text-xs text-slate-300">15 Preguntas variadas, 10s por turno y emparejamiento inteligente.</p>
+            <h3 class="text-2xl font-extrabold text-white">⚔️ Guerra de Inglés 1vs1 Real</h3>
+            <p class="text-xs text-slate-300">Conecta y espera a un jugador real en línea para competir.</p>
             
             <div class="flex justify-center gap-4 py-1">
                 <label class="cursor-pointer flex flex-col items-center">
@@ -141,26 +144,122 @@ window.openWarSetup = function() {
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="startBattleMatch('random')" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">🎲 Emparejamiento Rápido</button>
-                <button onclick="startBattleMatch('room')" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">🚪 Crear / Unir Sala</button>
+                <button onclick="startRealMatchmaking()" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition">🎲 Buscar Rival Real</button>
+                <button onclick="startPrivateRoomMatch()" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">🚪 Sala Privada</button>
             </div>
         </div>
     `;
-    document.getElementById('lesson-counter').innerText = 'Duelo 1vs1';
+    document.getElementById('lesson-counter').innerText = 'Duelo 1vs1 Real';
     document.getElementById('lesson-progress').style.width = '100%';
 };
 
-window.startBattleMatch = function(mode) {
+window.startRealMatchmaking = async function() {
     const selectedAvatar = document.querySelector('input[name="battle-avatar"]:checked')?.value || '🐺 Lobo';
-    const roomNameInput = document.getElementById('war-room-name');
-    const roomPassInput = document.getElementById('war-room-pass');
+    if (currentUser) {
+        currentUser.battleAvatar = selectedAvatar;
+        saveCurrentUserData();
+    }
 
-    currentBattle.mode = mode;
-    currentBattle.roomName = roomNameInput ? roomNameInput.value.trim() : '';
-    currentBattle.roomPass = roomPassInput ? roomPassInput.value.trim() : '';
+    cleanupBattleListeners();
 
-    if (mode === 'room' && (!currentBattle.roomName || !currentBattle.roomPass)) {
-        showToast('Debes ingresar nombre y contraseña de sala.', 'error');
+    const container = document.getElementById('lesson-content');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="max-w-md mx-auto text-center space-y-6 py-12 px-4">
+            <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-3xl flex items-center justify-center mx-auto text-2xl animate-spin shadow-lg">
+                <i class="fa-solid fa-spinner"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-xl font-black text-white">Buscando rival real en línea...</h3>
+                <p class="text-xs text-slate-300">Esperando a que otro usuario se conecte a la partida...</p>
+            </div>
+            <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
+                Cancelar y Salir ❌
+            </button>
+        </div>
+    `;
+
+    if (!db) {
+        showToast('Error: Firebase no disponible.', 'error');
+        return;
+    }
+
+    try {
+        // Buscamos una sala en espera que no esté llena
+        const queueRef = db.collection('battleQueue');
+        const snapshot = await queueRef.where('status', '==', 'waiting').get();
+
+        let joinedBattleId = null;
+        let foundDoc = null;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.hostId !== currentUser.userId) {
+                foundDoc = doc;
+                joinedBattleId = doc.id;
+            }
+        });
+
+        if (foundDoc && joinedBattleId) {
+            // Nos unimos como invitado a la sala encontrada
+            activeBattleDocId = joinedBattleId;
+            currentBattle.isHost = false;
+            currentBattle.battleId = joinedBattleId;
+
+            await db.collection('battleQueue').doc(joinedBattleId).update({
+                guestId: currentUser.userId,
+                guestName: currentUser.name || 'Rival',
+                guestAvatar: selectedAvatar,
+                status: 'playing'
+            });
+
+            const hostData = foundDoc.data();
+            currentBattle.rivalName = `${hostData.hostName} (${hostData.hostAvatar})`;
+            showToast('¡Rival encontrado! Iniciando batalla real...', 'success');
+            initActualRealBattle();
+        } else {
+            // Creamos una nueva sala y esperamos a que alguien más entre
+            const newRoomRef = queueRef.doc();
+            activeBattleDocId = newRoomRef.id;
+            currentBattle.isHost = true;
+            currentBattle.battleId = newRoomRef.id;
+
+            await newRoomRef.set({
+                hostId: currentUser.userId,
+                hostName: currentUser.name || 'Meyer',
+                hostAvatar: selectedAvatar,
+                guestId: null,
+                guestName: null,
+                guestAvatar: null,
+                status: 'waiting',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Escuchamos si un rival entra a nuestra sala creada
+            matchmakingUnsubscribe = db.collection('battleQueue').doc(activeBattleDocId).onSnapshot(doc => {
+                const data = doc.data();
+                if (data && data.status === 'playing' && data.guestId) {
+                    if (matchmakingUnsubscribe) matchmakingUnsubscribe();
+                    currentBattle.rivalName = `${data.guestName} (${data.guestAvatar})`;
+                    showToast(`¡${data.guestName} se unió! Comienza el duelo.`, 'success');
+                    initActualRealBattle();
+                }
+            });
+        }
+    } catch (e) {
+        console.log("Error en emparejamiento:", e);
+        showToast('Error conectando a la sala de batalla.', 'error');
+    }
+};
+
+window.startPrivateRoomMatch = async function() {
+    const selectedAvatar = document.querySelector('input[name="battle-avatar"]:checked')?.value || '🐺 Lobo';
+    const roomName = document.getElementById('war-room-name')?.value.trim();
+    const roomPass = document.getElementById('war-room-pass')?.value.trim();
+
+    if (!roomName || !roomPass) {
+        showToast('Ingresa nombre y contraseña de sala privada.', 'error');
         return;
     }
 
@@ -169,47 +268,68 @@ window.startBattleMatch = function(mode) {
         saveCurrentUserData();
     }
 
-    if (currentBattle.timerInterval) {
-        clearInterval(currentBattle.timerInterval);
-        currentBattle.timerInterval = null;
-    }
+    cleanupBattleListeners();
+    activeBattleDocId = `room_${roomName}_${roomPass}`;
+    currentBattle.battleId = activeBattleDocId;
 
-    // Si es modo aleatorio, mostramos pantalla de "Buscando contrincante..."
-    if (mode === 'random') {
-        const container = document.getElementById('lesson-content');
-        if (!container) return;
+    const container = document.getElementById('lesson-content');
+    if (!container) return;
 
-        container.innerHTML = `
-            <div class="max-w-md mx-auto text-center space-y-6 py-12 px-4">
-                <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-3xl flex items-center justify-center mx-auto text-2xl animate-spin shadow-lg">
-                    <i class="fa-solid fa-spinner"></i>
-                </div>
-                <div class="space-y-2">
-                    <h3 class="text-xl font-black text-white">Buscando Contribuyente / Rival...</h3>
-                    <p class="text-xs text-slate-300">Conectando con la red global para encontrar un oponente disponible.</p>
-                </div>
-                <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
-                    Cancelar ❌
-                </button>
+    container.innerHTML = `
+        <div class="max-w-md mx-auto text-center space-y-6 py-12 px-4">
+            <div class="w-16 h-16 bg-rose-600/25 text-rose-400 rounded-3xl flex items-center justify-center mx-auto text-2xl animate-pulse shadow-lg">
+                <i class="fa-solid fa-door-open"></i>
             </div>
-        `;
+            <div class="space-y-2">
+                <h3 class="text-xl font-black text-white">Sala: ${roomName}</h3>
+                <p class="text-xs text-slate-300">Esperando contrincante con la misma contraseña...</p>
+            </div>
+            <button onclick="exitBattleMatch()" class="px-6 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition">
+                Salir ❌
+            </button>
+        </div>
+    `;
 
-        const possibleRivals = ['Carlos_9X', 'Alex_Dev', 'Maria_Pro', 'Luis_Code', 'Sofia_JS'];
-        currentBattle.rivalName = possibleRivals[Math.floor(Math.random() * possibleRivals.length)];
+    if (!db) return;
 
-        setTimeout(() => {
-            // Verificamos que el usuario siga en el modal antes de iniciar
-            const modalCheck = document.getElementById('view-lesson-modal');
-            if (modalCheck && !modalCheck.classList.contains('hidden')) {
-                initActualBattle();
+    const roomRef = db.collection('battleQueue').doc(activeBattleDocId);
+    const docSnap = await roomRef.get();
+
+    if (!docSnap.exists) {
+        currentBattle.isHost = true;
+        await roomRef.set({
+            hostId: currentUser.userId,
+            hostName: currentUser.name || 'Meyer',
+            hostAvatar: selectedAvatar,
+            status: 'waiting',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        matchmakingUnsubscribe = roomRef.onSnapshot(doc => {
+            const data = doc.data();
+            if (data && data.status === 'playing' && data.guestId) {
+                if (matchmakingUnsubscribe) matchmakingUnsubscribe();
+                currentBattle.rivalName = `${data.guestName} (${data.guestAvatar})`;
+                showToast(`¡Rival conectado en sala privada!`, 'success');
+                initActualRealBattle();
             }
-        }, 3000);
+        });
     } else {
-        initActualBattle();
+        currentBattle.isHost = false;
+        const data = docSnap.data();
+        await roomRef.update({
+            guestId: currentUser.userId,
+            guestName: currentUser.name || 'Invitado',
+            guestAvatar: selectedAvatar,
+            status: 'playing'
+        });
+        currentBattle.rivalName = `${data.hostName} (${data.hostAvatar})`;
+        showToast('¡Conectado a sala privada con éxito!', 'success');
+        initActualRealBattle();
     }
 };
 
-function initActualBattle() {
+function initActualRealBattle() {
     currentBattle.score = 0;
     currentBattle.rivalScore = 0;
     currentBattle.questionIndex = 0;
@@ -237,8 +357,8 @@ function renderBattleQuestion() {
             </div>
 
             <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-2xl border border-slate-700 text-xs font-bold text-white">
-                <div>Tu (${currentUser?.battleAvatar || '🐺'}): <span class="text-emerald-400">${currentBattle.score} pts</span></div>
-                <div>Rival (${currentBattle.rivalName}): <span class="text-rose-400">${currentBattle.rivalScore} pts</span></div>
+                <div>Tu (${currentUser?.battleAvatar || '🐺'}): <span class="text-emerald-400" id="my-score-display">${currentBattle.score} pts</span></div>
+                <div>Rival (${currentBattle.rivalName}): <span class="text-rose-400" id="rival-score-display">${currentBattle.rivalScore} pts</span></div>
             </div>
 
             <div class="text-center space-y-2">
@@ -269,6 +389,29 @@ function renderBattleQuestion() {
         currentBattle.timerInterval = null;
     }
 
+    // Sincronizamos puntuación con Firebase en tiempo real
+    if (db && activeBattleDocId) {
+        const battleRef = db.collection('battleQueue').doc(activeBattleDocId);
+        battleStateUnsubscribe = battleRef.onSnapshot(doc => {
+            const data = doc.data();
+            if (data) {
+                if (currentBattle.isHost) {
+                    if (data.guestScore !== undefined) {
+                        currentBattle.rivalScore = data.guestScore;
+                        const el = document.getElementById('rival-score-display');
+                        if (el) el.innerText = `${currentBattle.rivalScore} pts`;
+                    }
+                } else {
+                    if (data.hostScore !== undefined) {
+                        currentBattle.rivalScore = data.hostScore;
+                        const el = document.getElementById('rival-score-display');
+                        if (el) el.innerText = `${currentBattle.rivalScore} pts`;
+                    }
+                }
+            }
+        });
+    }
+
     currentBattle.timerInterval = setInterval(() => {
         currentBattle.timer--;
         const timerEl = document.getElementById('battle-timer');
@@ -284,7 +427,7 @@ function renderBattleQuestion() {
     }, 1000);
 }
 
-window.handleBattleAnswer = function(selectedIdx, correctIdx) {
+window.handleBattleAnswer = async function(selectedIdx, correctIdx) {
     if (currentBattle.timerInterval) {
         clearInterval(currentBattle.timerInterval);
         currentBattle.timerInterval = null;
@@ -300,12 +443,20 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
     if (selectedIdx === correctIdx) {
         showToast('🎉 ¡Correcto! +10 Pts', 'success');
         currentBattle.score += 10;
+        const myEl = document.getElementById('my-score-display');
+        if (myEl) myEl.innerText = `${currentBattle.score} pts`;
     } else {
         showToast('❌ Incorrecto', 'error');
     }
 
-    if (currentBattle.mode === 'random' && Math.random() > 0.4) {
-        currentBattle.rivalScore += 10;
+    // Actualizamos nuestra puntuación en la nube para que el rival la vea
+    if (db && activeBattleDocId) {
+        try {
+            const updateObj = currentBattle.isHost ? { hostScore: currentBattle.score } : { guestScore: currentBattle.score };
+            await db.collection('battleQueue').doc(activeBattleDocId).update(updateObj);
+        } catch (e) {
+            console.log("Error actualizando score en nube:", e);
+        }
     }
 
     setTimeout(() => {
@@ -314,21 +465,30 @@ window.handleBattleAnswer = function(selectedIdx, correctIdx) {
     }, 1200);
 };
 
-window.exitBattleMatch = function() {
+function cleanupBattleListeners() {
+    if (matchmakingUnsubscribe) {
+        matchmakingUnsubscribe();
+        matchmakingUnsubscribe = null;
+    }
+    if (battleStateUnsubscribe) {
+        battleStateUnsubscribe();
+        battleStateUnsubscribe = null;
+    }
     if (currentBattle.timerInterval) {
         clearInterval(currentBattle.timerInterval);
         currentBattle.timerInterval = null;
     }
+}
+
+window.exitBattleMatch = function() {
+    cleanupBattleListeners();
     const modal = document.getElementById('view-lesson-modal');
     if (modal) modal.classList.add('hidden');
     showToast('Batalla finalizada correctamente.', 'info');
 };
 
 function finishBattleMatch() {
-    if (currentBattle.timerInterval) {
-        clearInterval(currentBattle.timerInterval);
-        currentBattle.timerInterval = null;
-    }
+    cleanupBattleListeners();
     const container = document.getElementById('lesson-content');
     if (!container) return;
     const won = currentBattle.score >= currentBattle.rivalScore;
@@ -1039,10 +1199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeLessonBtn = document.getElementById('btn-close-lesson');
     if (closeLessonBtn) {
         closeLessonBtn.onclick = () => {
-            if (currentBattle.timerInterval) {
-                clearInterval(currentBattle.timerInterval);
-                currentBattle.timerInterval = null;
-            }
+            cleanupBattleListeners();
             document.getElementById('view-lesson-modal').classList.add('hidden');
         };
     }
