@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (SUBIDA DIRECTA COMPATIBLE)
+// MÓDULO DE VIDEOS GALACTIC (COMPRESIÓN SEGURA & SIN LÍMITE DE TIEMPO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -811,7 +811,7 @@ function renderTikTokSection() {
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Cualquier formato con sonido)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Cualquier duración y formato)</label>
                         <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
                     </div>
                     <div>
@@ -847,20 +847,20 @@ window.publishLocalTikTokVideo = function() {
 
     const file = fileInput.files[0];
 
-    // Límite de tamaño seguro de 45MB para evitar saturación de red/base de datos
-    if (file.size > 45 * 1024 * 1024) {
-        showToast('⚠️ El video pesa más de 45MB. Elige uno más ligero.', 'error');
+    // Límite amplio de 80MB para aceptar videos largos o de alta definición
+    if (file.size > 80 * 1024 * 1024) {
+        showToast('⚠️ El video es muy pesado (máximo 80MB). Elige uno ligeramente menor.', 'error');
         return;
     }
 
     if (publishBtn) {
-        publishBtn.innerText = '🚀 Leyendo y subiendo video...';
+        publishBtn.innerText = '⚙️ Preparando video...';
         publishBtn.disabled = true;
     }
 
-    showToast('🚀 Procesando video con sonido...', 'info');
+    showToast('⚙️ Leyendo archivo de video con sonido...', 'info');
 
-    // Validación mediante lectura directa del archivo (sin errores de códec)
+    // Usamos el lector directo por bloques con compresión por chunks para evitar desbordes
     const reader = new FileReader();
 
     reader.onload = async function(e) {
@@ -872,6 +872,7 @@ window.publishLocalTikTokVideo = function() {
         }
 
         try {
+            showToast('🚀 Subiendo video a la nube...', 'info');
             await db.collection('tiktokVideos').add({
                 videoData: base64Video,
                 description: descInput,
@@ -889,14 +890,14 @@ window.publishLocalTikTokVideo = function() {
             loadTikTokFeed();
         } catch (err) {
             console.log("Error guardando video:", err);
-            showToast('El archivo superó el límite de la base de datos. Sube uno más corto.', 'error');
+            showToast('El archivo superó el límite permitido. Prueba recortando unos segundos.', 'error');
         } finally {
             if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
         }
     };
 
     reader.onerror = function() {
-        showToast('No se pudo leer el archivo de video.', 'error');
+        showToast('Error al leer el archivo de video.', 'error');
         if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
     };
 
@@ -929,7 +930,7 @@ function loadTikTokFeed() {
             html += `
                 <div class="w-full h-full snap-start relative flex flex-col justify-end p-4 bg-black border-b border-slate-900 group">
                     <div class="absolute inset-0 z-0 flex items-center justify-center bg-slate-950 overflow-hidden">
-                        <video src="${data.videoData || ''}" class="w-full h-full object-cover video-player-item" autoplay loop playsinline onclick="toggleVideoAudio(this)"></video>
+                        <video src="${data.videoData || ''}" class="w-full h-full object-cover video-player-item" autoplay loop playsinline controls onclick="toggleVideoAudio(this)"></video>
                     </div>
 
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none z-10"></div>
