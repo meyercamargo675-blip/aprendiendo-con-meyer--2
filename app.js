@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (NUBE REAL FIRESTORE + BASE64 OPTIMIZADO)
+// MÓDULO DE VIDEOS GALACTIC (SISTEMA URL DIRECTA BLINDADO)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -791,7 +791,7 @@ function renderTikTokSection() {
                 <span class="text-xs font-bold text-slate-400">Siguiendo</span>
                 <span class="text-sm font-black text-white border-b-2 border-rose-500 pb-0.5">Videos Galactic 🌌</span>
                 <button onclick="openUploadVideoModal()" class="text-rose-500 hover:text-rose-400 bg-slate-900/90 px-3 py-1.5 rounded-full border border-slate-700 shadow transition flex items-center space-x-1">
-                    <i class="fa-solid fa-plus text-xs"></i><span class="text-[10px] font-bold">Subir Video</span>
+                    <i class="fa-solid fa-plus text-xs"></i><span class="text-[10px] font-bold">Añadir Video</span>
                 </button>
             </div>
 
@@ -806,20 +806,21 @@ function renderTikTokSection() {
         <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-fade-in">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-black text-white">📤 Subir a Videos Galactic</h3>
+                    <h3 class="text-base font-black text-white">📤 Publicar Video Galactic</h3>
                     <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Permanente en Nube)</label>
-                        <input type="file" id="input-local-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer">
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Enlace URL del Video (MP4 / WebM / Google Drive)</label>
+                        <input type="url" id="input-video-url" placeholder="https://ejemplo.com/video.mp4" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500">
+                        <p class="text-[9px] text-slate-400 mt-1">💡 Pega cualquier enlace de video directo o súbelo a un servidor gratuito y pega su link.</p>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase font-bold text-slate-400">Descripción y Hashtags</label>
                         <textarea id="input-video-desc" rows="3" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button id="btn-publish-video-action" onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
+                <button id="btn-publish-video-action" onclick="publishUrlTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
             </div>
         </div>
     `;
@@ -835,71 +836,51 @@ window.closeUploadVideoModal = function() {
     document.getElementById('upload-video-modal')?.classList.add('hidden');
 };
 
-window.publishLocalTikTokVideo = function() {
-    const fileInput = document.getElementById('input-local-video-file');
+window.publishUrlTikTokVideo = async function() {
+    const urlInput = document.getElementById('input-video-url').value.trim();
     const descInput = document.getElementById('input-video-desc').value.trim();
     const publishBtn = document.getElementById('btn-publish-video-action');
 
-    if (!fileInput.files || fileInput.files.length === 0 || !descInput) {
-        showToast('Selecciona un video y escribe una descripción.', 'error');
+    if (!urlInput || !descInput) {
+        showToast('Ingresa un enlace de video y una descripción.', 'error');
         return;
     }
 
-    const file = fileInput.files[0];
-
-    // Límite de 45MB optimizado para que suba rápido y seguro a Firestore
-    if (file.size > 45 * 1024 * 1024) {
-        showToast('⚠️ El video pesa más de 45MB. Elige uno ligeramente menor.', 'error');
+    if (!db) {
+        showToast('Firebase no disponible.', 'error');
         return;
     }
 
     if (publishBtn) {
-        publishBtn.innerText = '🚀 Subiendo a la nube...';
+        publishBtn.innerText = '🚀 Publicando...';
         publishBtn.disabled = true;
     }
 
-    showToast('⚙️ Procesando video para todos los usuarios...', 'info');
+    try {
+        await db.collection('tiktokVideos').add({
+            videoData: urlInput,
+            description: descInput,
+            authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
+            authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+            authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
+            likes: [],
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        const base64Video = e.target.result;
-
-        if (!db) {
-            showToast('Firebase no disponible.', 'error');
-            if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
-            return;
+        showToast('🎉 ¡Video publicado con éxito en Galactic!');
+        closeUploadVideoModal();
+        document.getElementById('input-video-url').value = '';
+        document.getElementById('input-video-desc').value = '';
+        loadTikTokFeed();
+    } catch (err) {
+        console.log("Error publicando video:", err);
+        showToast('Error al conectar con la base de datos.', 'error');
+    } finally {
+        if (publishBtn) {
+            publishBtn.innerText = 'Publicar en Galactic 🚀';
+            publishBtn.disabled = false;
         }
-
-        try {
-            await db.collection('tiktokVideos').add({
-                videoData: base64Video,
-                description: descInput,
-                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
-                authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-                authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
-                likes: [],
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            showToast('🎉 ¡Video publicado y guardado en la nube para todos!');
-            closeUploadVideoModal();
-            fileInput.value = '';
-            document.getElementById('input-video-desc').value = '';
-            loadTikTokFeed();
-        } catch (err) {
-            console.log("Error guardando video:", err);
-            showToast('El archivo superó el espacio permitido. Prueba con uno un poco más corto.', 'error');
-        } finally {
-            if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
-        }
-    };
-
-    reader.onerror = function() {
-        showToast('Error al leer el archivo de video.', 'error');
-        if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
-    };
-
-    reader.readAsDataURL(file);
+    }
 };
 
 function loadTikTokFeed() {
@@ -911,7 +892,7 @@ function loadTikTokFeed() {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 p-6 text-center">
                     <div class="text-4xl">📱</div>
-                    <p class="text-xs">No hay videos aún. ¡Sube el primero usando el botón superior!</p>
+                    <p class="text-xs">No hay videos aún. ¡Agrega el primero usando el botón superior!</p>
                 </div>
             `;
             return;
