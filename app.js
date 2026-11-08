@@ -779,7 +779,7 @@ window.clearCurrentPrivateChatHistory = function() {
 };
 
 // ==========================================
-// MÓDULO DE VIDEOS GALACTIC (CARPETA VIRTUAL ESPECIAL)
+// MÓDULO DE VIDEOS GALACTIC (SOPORTE HASTA 50 MB DIRECTO DESDE LA GALERÍA)
 // ==========================================
 function renderTikTokSection() {
     const secVideos = document.getElementById('sec-videos');
@@ -806,21 +806,21 @@ function renderTikTokSection() {
         <div id="upload-video-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-fade-in">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-base font-black text-white">📤 Subir Video Galactic</h3>
+                    <h3 class="text-base font-black text-white">📤 Subir Video (Hasta 50MB)</h3>
                     <button onclick="closeUploadVideoModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Carpeta de Archivos)</label>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Seleccionar Video (Celular o PC)</label>
                         <input type="file" id="input-video-file" accept="video/*" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-600 file:text-white hover:file:bg-rose-500 cursor-pointer mt-1">
-                        <p class="text-[9px] text-slate-400 mt-1">💡 Sin límite de peso. Sube cualquier video de tu dispositivo.</p>
+                        <p class="text-[9px] text-slate-400 mt-1">💡 Puedes subir videos de tu galería de hasta 50MB sin problemas.</p>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase font-bold text-slate-400">Descripción y Hashtags</label>
                         <textarea id="input-video-desc" rows="3" placeholder="Escribe tu descripción con #tags..." class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white outline-none focus:border-rose-500"></textarea>
                     </div>
                 </div>
-                <button id="btn-publish-video-action" onclick="publishLocalTikTokVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
+                <button id="btn-publish-video-action" onclick="publishGalleryVideo()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition">Publicar en Galactic 🚀</button>
             </div>
         </div>
     `;
@@ -836,63 +836,72 @@ window.closeUploadVideoModal = function() {
     document.getElementById('upload-video-modal')?.classList.add('hidden');
 };
 
-window.publishLocalTikTokVideo = async function() {
+window.publishGalleryVideo = async function() {
     const fileInput = document.getElementById('input-video-file');
     const descInput = document.getElementById('input-video-desc').value.trim();
     const publishBtn = document.getElementById('btn-publish-video-action');
 
     if (!fileInput.files || fileInput.files.length === 0) {
-        showToast('Selecciona un archivo de video.', 'error');
+        showToast('Selecciona un video de tu galería.', 'error');
         return;
     }
 
     if (!descInput) {
-        showToast('Escribe una descripción para tu video.', 'error');
+        showToast('Escribe una descripción.', 'error');
         return;
     }
 
     const file = fileInput.files[0];
 
-    if (publishBtn) {
-        publishBtn.innerText = '📁 Procesando video...';
-        publishBtn.disabled = true;
-    }
-
-    // Creamos la referencia limpia en la carpeta virtual interna del sistema
-    const folderObjectUrl = URL.createObjectURL(file);
-
-    if (!db) {
-        showToast('Firebase no disponible.', 'error');
-        if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
+    // Límite configurado a 50MB exactos
+    if (file.size > 50 * 1024 * 1024) {
+        showToast('⚠️ El video supera los 50MB. Elige un archivo más liviano.', 'error');
         return;
     }
 
-    try {
-        await db.collection('tiktokVideos').add({
-            videoData: folderObjectUrl,
-            fileName: file.name,
-            description: descInput,
-            authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
-            authorId: currentUser ? currentUser.userId : 'MEYER_ID',
-            authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
-            likes: [],
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        showToast('🎉 ¡Video subido y publicado con éxito!');
-        closeUploadVideoModal();
-        fileInput.value = '';
-        document.getElementById('input-video-desc').value = '';
-        loadTikTokFeed();
-    } catch (err) {
-        console.log("Error publicando video:", err);
-        showToast('Error al publicar el video.', 'error');
-    } finally {
-        if (publishBtn) {
-            publishBtn.innerText = 'Publicar en Galactic 🚀';
-            publishBtn.disabled = false;
-        }
+    if (publishBtn) {
+        publishBtn.innerText = '🚀 Subiendo video (50MB máx)...';
+        publishBtn.disabled = true;
     }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Data = e.target.result;
+
+        if (!db) {
+            showToast('Base de datos no disponible.', 'error');
+            if (publishBtn) { publishBtn.innerText = 'Publicar en Galactic 🚀'; publishBtn.disabled = false; }
+            return;
+        }
+
+        try {
+            await db.collection('tiktokVideos').add({
+                videoData: base64Data,
+                description: descInput,
+                authorName: currentUser ? (currentUser.name || 'Meyer') : 'Meyer',
+                authorId: currentUser ? currentUser.userId : 'MEYER_ID',
+                authorAvatar: currentUser ? (currentUser.avatarUrl || 'https://images.unsplash.com/photo-15344528741775-53994a69daeb?w=150') : '',
+                likes: [],
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast('🎉 ¡Video de hasta 50MB publicado con éxito!');
+            closeUploadVideoModal();
+            fileInput.value = '';
+            document.getElementById('input-video-desc').value = '';
+            loadTikTokFeed();
+        } catch (err) {
+            console.log("Error subiendo video:", err);
+            showToast('Error: El video excede el límite permitido por la base de datos.', 'error');
+        } finally {
+            if (publishBtn) {
+                publishBtn.innerText = 'Publicar en Galactic 🚀';
+                publishBtn.disabled = false;
+            }
+        }
+    };
+
+    reader.readAsDataURL(file);
 };
 
 function loadTikTokFeed() {
@@ -904,7 +913,7 @@ function loadTikTokFeed() {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 p-6 text-center">
                     <div class="text-4xl">📱</div>
-                    <p class="text-xs">No hay videos aún. ¡Sube el primero usando el botón superior!</p>
+                    <p class="text-xs">No hay videos aún. ¡Sube el primero desde tu galería!</p>
                 </div>
             `;
             return;
@@ -1168,7 +1177,7 @@ function playGalacticIntroAnimation() {
 
     const introDiv = document.createElement('div');
     introDiv.id = 'galactic-intro-screen';
-    introDiv.className = 'fixed inset-0 z-[999999] bg-slate-950 flex flex-col items-center justify-center text-white transition-opacity duration-700';
+    introDiv.className = 'fixed inset-0 z-[99999] bg-slate-950 flex flex-col items-center justify-center text-white transition-opacity duration-700';
     introDiv.innerHTML = `
         <div class="space-y-4 text-center animate-pulse">
             <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-rose-600 rounded-3xl flex items-center justify-center mx-auto text-4xl shadow-2xl shadow-rose-500/50">
